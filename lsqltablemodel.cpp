@@ -2,6 +2,17 @@
 #include <QDebug>
 #include <QSqlError>
 
+/*!
+    \class LSqlTableModel
+    \brief The alternative to standard QSqlTable model class that provides an editable data model
+    for a single database table.
+
+    The main idea of LSqlTableModel is to avoid full table reselection after rows deletion
+    and creation. There isn't any caching for \c removeRow() operation though row modification and 
+    new rows creation is cached until \c submit or \c revert methods called.
+    
+*/
+
 LSqlTableModel::LSqlTableModel(QObject *parent, QSqlDatabase db) :
     QAbstractTableModel(parent)
 {
@@ -9,6 +20,9 @@ LSqlTableModel::LSqlTableModel(QObject *parent, QSqlDatabase db) :
   _query = QSqlQuery(_db);
 }
 
+/*!
+    Sets the database table the model should be populated with
+*/
 bool LSqlTableModel::setTable(QString tableName)
 {
   _tableName = tableName;
@@ -17,6 +31,9 @@ bool LSqlTableModel::setTable(QString tableName)
   return true;
 }
 
+/*!
+    Populates the model with table data
+*/
 bool LSqlTableModel::reloadTable()
 {
   QString sql = "select * from %1";
@@ -32,6 +49,10 @@ bool LSqlTableModel::reloadTable()
   return true;
 }
 
+/*!
+    Trys to submit all cached (unsaved) changes to the database table.
+    Returns \c true if all cached changes were successfully submitted.
+*/
 bool LSqlTableModel::submitAll()
 {
   //Если не было изменений, сразу выход
@@ -47,16 +68,26 @@ bool LSqlTableModel::submitAll()
   return result;
 }
 
+/*!
+    Returns number of rows that the model contains
+*/
 int LSqlTableModel::rowCount(const QModelIndex &parent) const
 {
   return _recMap.count();
 }
 
+/*!
+    Returns number of columns tha the model contains
+*/
 int LSqlTableModel::columnCount(const QModelIndex &parent) const
 {
   return _patternRec.count();
 }
 
+/*!
+    Overriden virtual method that returns the model data for roles \c Qt::DisplayRole and
+    \c Qt::EditRole.
+*/
 QVariant LSqlTableModel::data(const QModelIndex &index, int role) const
 {
   if (!index.isValid())
@@ -73,6 +104,11 @@ QVariant LSqlTableModel::data(const QModelIndex &index, int role) const
   }
 }
 
+/*!
+    Overriden virtual method that used to save the data to the model.
+    Rows modified by this method would be marked with cache action \c LSqlRecord::Update 
+    unless they are already marked with cache action \c LSqlRecord::Insert.
+*/
 bool LSqlTableModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
   qDebug() << "old val: " << data(index) << "new data: " << value;
@@ -85,6 +121,10 @@ bool LSqlTableModel::setData(const QModelIndex &index, const QVariant &value, in
   return true;
 }
 
+/*!
+    Overriden virtual method that manages properties of model items
+    (such as \c Qt::ItemIsEnabled Qt::ItemIsSelectable  Qt::ItemIsEditable)
+*/
 Qt::ItemFlags LSqlTableModel::flags(const QModelIndex &index) const
 {
   if (!index.isValid())
@@ -96,6 +136,9 @@ Qt::ItemFlags LSqlTableModel::flags(const QModelIndex &index) const
   return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable;
 }
 
+/*!
+    Overriden virtual method that manages header item data of a view widget
+*/
 QVariant LSqlTableModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
   if (role == Qt::DisplayRole){
@@ -109,6 +152,11 @@ QVariant LSqlTableModel::headerData(int section, Qt::Orientation orientation, in
   return QVariant();
 }
 
+/*!
+    Inserts new row into the model. Supports adding of only one row at a time.
+    Primary key value of a new record filled through \c nextId() call. Other record
+    fields can be filled with initial values by handling signal \c beforeInsert(QSqlRecord)
+*/
 bool LSqlTableModel::insertRows(int row, int count, const QModelIndex &parent)
 {
   //Только для таблиц и по одной строке
@@ -135,6 +183,10 @@ bool LSqlTableModel::insertRows(int row, int count, const QModelIndex &parent)
   return true;
 }
 
+/*!
+    Removes row from the model and deletes the corresponding record from
+    the database table. The operation isn't cachable unlike QSqlTableModel.
+*/
 bool LSqlTableModel::removeRows(int row, int count, const QModelIndex &parent)
 {
   //Только для таблиц и по одной строке
@@ -154,6 +206,9 @@ bool LSqlTableModel::removeRows(int row, int count, const QModelIndex &parent)
   return true;
 }
 
+/*!
+    Sets cache operation mark for the model row.
+*/
 void LSqlTableModel::setCacheAction(LSqlRecord &rec, LSqlRecord::CacheAction action)
 {
   //Вставленная запись остается вставленной, даже если ее редактировать
@@ -165,6 +220,9 @@ void LSqlTableModel::setCacheAction(LSqlRecord &rec, LSqlRecord::CacheAction act
     _modified = true;
 }
 
+/*!
+    Submit cached changes to the corresponding database table record
+*/
 bool LSqlTableModel::submitRecord(LSqlRecord &rec)
 {
   //Запись не редактировалась
@@ -187,6 +245,10 @@ bool LSqlTableModel::submitRecord(LSqlRecord &rec)
   return result;
 }
 
+/*!
+  Revert all cached changes to the model data.
+  Note: Remove operation connot be cached unlike QSqlTableModel.
+*/
 bool LSqlTableModel::revertAll()
 {
   //Если не было изменений, сразу выход
@@ -290,6 +352,10 @@ QSqlRecord LSqlTableModel::primaryValues(QSqlRecord rec) const
   return r;
 }
 
+/*!
+    Returns a subsequent value of the database generator (sequence).
+    Name of the generator can be set by method \c setSequenceName.
+*/
 int LSqlTableModel::nextId()
 {
   if (_sequenceName.isEmpty()){
@@ -306,6 +372,11 @@ int LSqlTableModel::nextId()
   return _query.value(0).toInt();
 }
 
+/*!
+    A wrapper function for all sql-queries.
+    Sends all executed sql-queries to qDebug() in case
+    of success and error messages in case of failure.
+*/
 bool LSqlTableModel::execQuery(const QString &sql)
 {
   bool result = _query.exec(sql);

@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<!-- lsqltablemodel.cpp -->
+  <title>LSqlTableModel Class | Qt </title>
+</head>
+<body>
+<li>LSqlTableModel</li>
+<li id="buildversion">
+</li>
+<div class="toc">
+<h3><a name="toc">Contents</a></h3>
+<ul>
+<li class="level1"><a href="#public-functions">Public Functions</a></li>
+<li class="level1"><a href="#signals">Signals</a></li>
+<li class="level1"><a href="#details">Detailed Description</a></li>
+</ul>
+</div>
+<h1 class="title">LSqlTableModel Class</h1>
+<!-- $$$LSqlTableModel-brief -->
+<p>The alternative to standard QSqlTable model class that provides an editable data model for a single database table. <a href="#details">More...</a></p>
+<!-- @@@LSqlTableModel -->
+<table class="alignedsummary">
+<tr><td class="memItemLeft rightAlign topAlign"> Header:</td><td class="memItemRight bottomAlign"> </b><tt><span class="preprocessor">#include &lt;LSqlTableModel&gt;</span>
+</tt></td></tr></table><ul>
+<li><a href="lsqltablemodel-members.html">List of all members, including inherited members</a></li>
+</ul>
+<a name="public-functions"></a>
+<h2>Public Functions</h2>
+<table class="alignedsummary">
+<tr><td class="memItemLeft rightAlign topAlign"> </td><td class="memItemRight bottomAlign"><b><a href="lsqltablemodel.html#LSqlTableModel">LSqlTableModel</a></b>(QObject *<i> parent</i> = 0, QSqlDatabase<i> db</i> = QSqlDatabase())</td></tr>
+<tr><td class="memItemLeft rightAlign topAlign"> int </td><td class="memItemRight bottomAlign"><b><a href="lsqltablemodel.html#columnCount">columnCount</a></b>(const QModelIndex &amp;<i> parent</i> = QModelIndex()) const</td></tr>
+<tr><td class="memItemLeft rightAlign topAlign"> QVariant </td><td class="memItemRight bottomAlign"><b><a href="lsqltablemodel.html#data">data</a></b>(const QModelIndex &amp;<i> index</i>, int<i> role</i> = Qt::DisplayRole) const</td></tr>
+<tr><td class="memItemLeft rightAlign topAlign"> Qt::ItemFlags </td><td class="memItemRight bottomAlign"><b><a href="lsqltablemodel.html#flags">flags</a></b>(const QModelIndex &amp;<i> index</i>) const</td></tr>
+<tr><td class="memItemLeft rightAlign topAlign"> QVariant </td><td class="memItemRight bottomAlign"><b><a href="lsqltablemodel.html#headerData">headerData</a></b>(int<i> section</i>, Qt::Orientation<i> orientation</i>, int<i> role</i> = Qt::DisplayRole) const</td></tr>
+<tr><td class="memItemLeft rightAlign topAlign"> bool </td><td class="memItemRight bottomAlign"><b><a href="lsqltablemodel.html#insertRows">insertRows</a></b>(int<i> row</i>, int<i> count</i>, const QModelIndex &amp;<i> parent</i> = QModelIndex())</td></tr>
+<tr><td class="memItemLeft rightAlign topAlign"> bool </td><td class="memItemRight bottomAlign"><b><a href="lsqltablemodel.html#reloadTable">reloadTable</a></b>()</td></tr>
+<tr><td class="memItemLeft rightAlign topAlign"> bool </td><td class="memItemRight bottomAlign"><b><a href="lsqltablemodel.html#removeRows">removeRows</a></b>(int<i> row</i>, int<i> count</i>, const QModelIndex &amp;<i> parent</i> = QModelIndex())</td></tr>
+<tr><td class="memItemLeft rightAlign topAlign"> bool </td><td class="memItemRight bottomAlign"><b><a href="lsqltablemodel.html#revertAll">revertAll</a></b>()</td></tr>
+<tr><td class="memItemLeft rightAlign topAlign"> int </td><td class="memItemRight bottomAlign"><b><a href="lsqltablemodel.html#rowCount">rowCount</a></b>(const QModelIndex &amp;<i> parent</i> = QModelIndex()) const</td></tr>
+<tr><td class="memItemLeft rightAlign topAlign"> bool </td><td class="memItemRight bottomAlign"><b><a href="lsqltablemodel.html#setData">setData</a></b>(const QModelIndex &amp;<i> index</i>, const QVariant &amp;<i> value</i>, int<i> role</i> = Qt::EditRole)</td></tr>
+<tr><td class="memItemLeft rightAlign topAlign"> void </td><td class="memItemRight bottomAlign"><b><a href="lsqltablemodel.html#setSequenceName">setSequenceName</a></b>(QString<i> name</i>)</td></tr>
+<tr><td class="memItemLeft rightAlign topAlign"> bool </td><td class="memItemRight bottomAlign"><b><a href="lsqltablemodel.html#setTable">setTable</a></b>(QString<i> tableName</i>)</td></tr>
+<tr><td class="memItemLeft rightAlign topAlign"> bool </td><td class="memItemRight bottomAlign"><b><a href="lsqltablemodel.html#submitAll">submitAll</a></b>()</td></tr>
+</table>
+<a name="signals"></a>
+<h2>Signals</h2>
+<table class="alignedsummary">
+<tr><td class="memItemLeft rightAlign topAlign"> void </td><td class="memItemRight bottomAlign"><b><a href="lsqltablemodel.html#beforeInsert">beforeInsert</a></b>(QSqlRecord &amp;<i> rec</i>)</td></tr>
+<tr><td class="memItemLeft rightAlign topAlign"> void </td><td class="memItemRight bottomAlign"><b><a href="lsqltablemodel.html#beforeUpdate">beforeUpdate</a></b>(QSqlRecord &amp;<i> rec</i>)</td></tr>
+</table>
+<a name="details"></a>
+<!-- $$$LSqlTableModel-description -->
+<div class="descr">
+<h2>Detailed Description</h2>
+<p>The alternative to standard QSqlTable model class that provides an editable data model for a single database table.</p>
+<p>The main idea of LSqlTableModel is to avoid full table reselection after rows deletion and creation. There isn't any caching for <tt>removeRow()</tt> operation though row modification and new rows creation is cached until <tt>submit</tt> or <tt>revert</tt> methods called.</p>
+</div>
+<!-- @@@LSqlTableModel -->
+<div class="func">
+<h2>Member Function Documentation</h2>
+<!-- $$$LSqlTableModel[overload1]$$$LSqlTableModelQObject*QSqlDatabase -->
+<h3 class="fn"><a name="LSqlTableModel"></a>LSqlTableModel::<span class="name">LSqlTableModel</span>(<span class="type">QObject</span> *<i> parent</i> = 0, <span class="type">QSqlDatabase</span><i> db</i> = QSqlDatabase())</h3>
+<!-- @@@LSqlTableModel -->
+<!-- $$$beforeInsert[overload1]$$$beforeInsertQSqlRecord& -->
+<h3 class="fn"><a name="beforeInsert"></a><span class="type">void</span> LSqlTableModel::<span class="name">beforeInsert</span>(<span class="type">QSqlRecord</span> &amp;<i> rec</i>)<tt> [signal]</tt></h3>
+<!-- @@@beforeInsert -->
+<!-- $$$beforeUpdate[overload1]$$$beforeUpdateQSqlRecord& -->
+<h3 class="fn"><a name="beforeUpdate"></a><span class="type">void</span> LSqlTableModel::<span class="name">beforeUpdate</span>(<span class="type">QSqlRecord</span> &amp;<i> rec</i>)<tt> [signal]</tt></h3>
+<!-- @@@beforeUpdate -->
+<!-- $$$columnCount[overload1]$$$columnCountconstQModelIndex& -->
+<h3 class="fn"><a name="columnCount"></a><span class="type">int</span> LSqlTableModel::<span class="name">columnCount</span>(const <span class="type">QModelIndex</span> &amp;<i> parent</i> = QModelIndex()) const</h3>
+<p>Returns number of columns tha the model contains</p>
+<!-- @@@columnCount -->
+<!-- $$$data[overload1]$$$dataconstQModelIndex&int -->
+<h3 class="fn"><a name="data"></a><span class="type">QVariant</span> LSqlTableModel::<span class="name">data</span>(const <span class="type">QModelIndex</span> &amp;<i> index</i>, <span class="type">int</span><i> role</i> = Qt::DisplayRole) const</h3>
+<p>Overriden virtual method that returns the model data for roles <tt>Qt::DisplayRole</tt> and <tt>Qt::EditRole</tt>.</p>
+<p><b>See also </b><a href="lsqltablemodel.html#setData">setData</a>().</p>
+<!-- @@@data -->
+<!-- $$$flags[overload1]$$$flagsconstQModelIndex& -->
+<h3 class="fn"><a name="flags"></a><span class="type">Qt::ItemFlags</span> LSqlTableModel::<span class="name">flags</span>(const <span class="type">QModelIndex</span> &amp;<i> index</i>) const</h3>
+<p>Overriden virtual method that manages properties of model items (such as <tt>Qt::ItemIsEnabled</tt> Qt::ItemIsSelectable Qt::ItemIsEditable)</p>
+<!-- @@@flags -->
+<!-- $$$headerData[overload1]$$$headerDataintQt::Orientationint -->
+<h3 class="fn"><a name="headerData"></a><span class="type">QVariant</span> LSqlTableModel::<span class="name">headerData</span>(<span class="type">int</span><i> section</i>, <span class="type">Qt::Orientation</span><i> orientation</i>, <span class="type">int</span><i> role</i> = Qt::DisplayRole) const</h3>
+<p>Overriden virtual method that manages header item data of a view widget</p>
+<!-- @@@headerData -->
+<!-- $$$insertRows[overload1]$$$insertRowsintintconstQModelIndex& -->
+<h3 class="fn"><a name="insertRows"></a><span class="type">bool</span> LSqlTableModel::<span class="name">insertRows</span>(<span class="type">int</span><i> row</i>, <span class="type">int</span><i> count</i>, const <span class="type">QModelIndex</span> &amp;<i> parent</i> = QModelIndex())</h3>
+<p>Inserts new row into the model. Supports adding of only one row at a time. Primary key value of a new record filled through <tt>nextId()</tt> call. Other record fields can be filled with initial values by handling signal <tt>beforeInsert(QSqlRecord)</tt></p>
+<!-- @@@insertRows -->
+<!-- $$$reloadTable[overload1]$$$reloadTable -->
+<h3 class="fn"><a name="reloadTable"></a><span class="type">bool</span> LSqlTableModel::<span class="name">reloadTable</span>()</h3>
+<p>Populates the model with table data</p>
+<!-- @@@reloadTable -->
+<!-- $$$removeRows[overload1]$$$removeRowsintintconstQModelIndex& -->
+<h3 class="fn"><a name="removeRows"></a><span class="type">bool</span> LSqlTableModel::<span class="name">removeRows</span>(<span class="type">int</span><i> row</i>, <span class="type">int</span><i> count</i>, const <span class="type">QModelIndex</span> &amp;<i> parent</i> = QModelIndex())</h3>
+<p>Removes row from the model and deletes the corresponding record from the database table. The operation isn't cachable unlike QSqlTableModel.</p>
+<!-- @@@removeRows -->
+<!-- $$$revertAll[overload1]$$$revertAll -->
+<h3 class="fn"><a name="revertAll"></a><span class="type">bool</span> LSqlTableModel::<span class="name">revertAll</span>()</h3>
+<p>Revert all cached changes to the model data. Note: Remove operation connot be cached unlike QSqlTableModel.</p>
+<!-- @@@revertAll -->
+<!-- $$$rowCount[overload1]$$$rowCountconstQModelIndex& -->
+<h3 class="fn"><a name="rowCount"></a><span class="type">int</span> LSqlTableModel::<span class="name">rowCount</span>(const <span class="type">QModelIndex</span> &amp;<i> parent</i> = QModelIndex()) const</h3>
+<p>Returns number of rows that the model contains</p>
+<!-- @@@rowCount -->
+<!-- $$$setData[overload1]$$$setDataconstQModelIndex&constQVariant&int -->
+<h3 class="fn"><a name="setData"></a><span class="type">bool</span> LSqlTableModel::<span class="name">setData</span>(const <span class="type">QModelIndex</span> &amp;<i> index</i>, const <span class="type">QVariant</span> &amp;<i> value</i>, <span class="type">int</span><i> role</i> = Qt::EditRole)</h3>
+<p>Overriden virtual method that used to save the data to the model. Rows modified by this method would be marked with cache action <tt>LSqlRecord::Update</tt> unless they are already marked with cache action <tt>LSqlRecord::Insert</tt>.</p>
+<p><b>See also </b><a href="lsqltablemodel.html#data">data</a>().</p>
+<!-- @@@setData -->
+<!-- $$$setSequenceName[overload1]$$$setSequenceNameQString -->
+<h3 class="fn"><a name="setSequenceName"></a><span class="type">void</span> LSqlTableModel::<span class="name">setSequenceName</span>(<span class="type">QString</span><i> name</i>)</h3>
+<!-- @@@setSequenceName -->
+<!-- $$$setTable[overload1]$$$setTableQString -->
+<h3 class="fn"><a name="setTable"></a><span class="type">bool</span> LSqlTableModel::<span class="name">setTable</span>(<span class="type">QString</span><i> tableName</i>)</h3>
+<p>Sets the database table the model should be populated with</p>
+<!-- @@@setTable -->
+<!-- $$$submitAll[overload1]$$$submitAll -->
+<h3 class="fn"><a name="submitAll"></a><span class="type">bool</span> LSqlTableModel::<span class="name">submitAll</span>()</h3>
+<p>Trys to submit all cached (unsaved) changes to the database table. Returns <tt>true</tt> if all cached changes were successfully submitted.</p>
+<!-- @@@submitAll -->
+</div>
+</body>
+</html>

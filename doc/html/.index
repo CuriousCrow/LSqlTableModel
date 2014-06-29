@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE QDOCINDEX>
+<INDEX url="" title="" version="" project="">
+    <namespace threadsafety="unspecified" name="" access="public" status="commendable">
+        <class threadsafety="unspecified" name="LSqlRecord" href="lsqlrecord.html" access="private" status="internal" location="lsqltablemodel.h" filepath="D:/MyProjects/Qt/LSqlTableModel/trunk/lsqltablemodel.h" lineno="57" bases="">
+            <function threadsafety="unspecified" name="LSqlRecord" fullname="LSqlRecord::LSqlRecord" href="lsqlrecord.html#LSqlRecord" access="public" status="commendable" location="lsqltablemodel.cpp" filepath="D:/MyProjects/Qt/LSqlTableModel/trunk/lsqltablemodel.cpp" lineno="391" virtual="non" meta="constructor" const="false" static="false" overload="false" type="" signature="LSqlRecord()"/>
+            <function threadsafety="unspecified" name="LSqlRecord" fullname="LSqlRecord::LSqlRecord" href="lsqlrecord.html#LSqlRecord-2" access="public" status="commendable" location="lsqltablemodel.cpp" filepath="D:/MyProjects/Qt/LSqlTableModel/trunk/lsqltablemodel.cpp" lineno="396" virtual="non" meta="constructor" const="false" static="false" overload="true" overload-number="2" type="" signature="LSqlRecord(const QSqlRecord &amp; rec)">
+                <parameter left="const QSqlRecord &amp;" right="" name="rec" default=""/>
+            </function>
+            <enum threadsafety="unspecified" name="CacheAction" fullname="LSqlRecord::CacheAction" href="lsqlrecord.html#CacheAction-enum" access="public" status="commendable" location="lsqltablemodel.h" filepath="D:/MyProjects/Qt/LSqlTableModel/trunk/lsqltablemodel.h" lineno="63">
+                <value name="None" value="0"/>
+                <value name="Insert" value="1"/>
+                <value name="Update" value="2"/>
+                <value name="Delete" value="3"/>
+            </enum>
+            <function threadsafety="unspecified" name="cacheAction" fullname="LSqlRecord::cacheAction" href="lsqlrecord.html#cacheAction" access="public" status="commendable" location="lsqltablemodel.h" filepath="D:/MyProjects/Qt/LSqlTableModel/trunk/lsqltablemodel.h" lineno="66" virtual="non" meta="plain" const="false" static="false" overload="false" type="CacheAction" signature="cacheAction()"/>
+            <function threadsafety="unspecified" name="setCacheAction" fullname="LSqlRecord::setCacheAction" href="lsqlrecord.html#setCacheAction" access="public" status="commendable" location="lsqltablemodel.h" filepath="D:/MyProjects/Qt/LSqlTableModel/trunk/lsqltablemodel.h" lineno="65" virtual="non" meta="plain" const="false" static="false" overload="false" type="void" signature="setCacheAction(CacheAction action)">
+                <parameter left="CacheAction" right="" name="action" default=""/>
+            </function>
+        </class>
+        <class threadsafety="unspecified" name="LSqlTableModel" href="lsqltablemodel.html" access="public" status="commendable" location="lsqltablemodel.h" filepath="D:/MyProjects/Qt/LSqlTableModel/trunk/lsqltablemodel.h" lineno="71" bases="" brief="The alternative to standard QSqlTable model class that provides an editable data model for a single database table.">
+            <function threadsafety="unspecified" name="LSqlTableModel" fullname="LSqlTableModel::LSqlTableModel" href="lsqltablemodel.html#LSqlTableModel" access="public" status="commendable" location="lsqltablemodel.cpp" filepath="D:/MyProjects/Qt/LSqlTableModel/trunk/lsqltablemodel.cpp" lineno="16" virtual="non" meta="constructor" const="false" static="false" overload="false" type="" signature="LSqlTableModel(QObject * parent, QSqlDatabase db)">
+                <parameter left="QObject *" right="" name="parent" default="0"/>
+                <parameter left="QSqlDatabase" right="" name="db" default="QSqlDatabase()"/>
+            </function>
+            <function threadsafety="unspecified" name="execQuery" fullname="LSqlTableModel::execQuery" href="lsqltablemodel.html#execQuery" access="private" status="commendable" location="lsqltablemodel.h" filepath="D:/MyProjects/Qt/LSqlTableModel/trunk/lsqltablemodel.h" lineno="127" virtual="non" meta="plain" const="false" static="false" overload="false" type="bool" signature="execQuery(const QString &amp; sql)">
+                <parameter left="const QString &amp;" right="" name="sql" default=""/>
+            </function>
+            <function threadsafety="unspecified" name="nextId" fullname="LSqlTableModel::nextId" href="lsqltablemodel.html#nextId" access="private" status="commendable" location="lsqltablemodel.h" filepath="D:/MyProjects/Qt/LSqlTableModel/trunk/lsqltablemodel.h" lineno="125" virtual="non" meta="plain" const="false" static="false" overload="false" type="int" signature="nextId()"/>
+            <function threadsafety="unspecified" name="primaryValues" fullname="LSqlTableModel::primaryValues" href="lsqltablemodel.html#primaryValues" access="private" status="commendable" location="lsqltablemodel.cpp" filepath="D:/MyProjects/Qt/LSqlTableModel/trunk/lsqltablemodel.cpp" lineno="346" virtual="non" meta="plain" const="true" static="false" overload="false" type="QSqlRecord" signature="primaryValues(QSqlRecord rec) const">
+                <parameter left="QSqlRecord" right="" name="rec" default=""/>
+            </function>
+            <function threadsafety="unspecified" name="deleteRowInTable" fullname="LSqlTableModel::deleteRowInTable" href="lsqltablemodel.html#deleteRowInTable" access="private" status="commendable" location="lsqltablemodel.cpp" filepath="D:/MyProjects/Qt/LSqlTableModel/trunk/lsqltablemodel.cpp" lineno="335" virtual="non" meta="plain" const="false" static="false" overload="false" type="bool" signature="deleteRowInTable(const QSqlRecord &amp; values)">
+                <parameter left="const QSqlRecord &amp;" right="" name="values" default=""/>
+            </function>
+            <function threadsafety="unspecified" name="insertRowInTable" fullname="LSqlTableModel::insertRowInTable" href="lsqltablemodel.html#insertRowInTable" access="private" status="commendable" location="lsqltablemodel.cpp" filepath="D:/MyProjects/Qt/LSqlTableModel/trunk/lsqltablemodel.cpp" lineno="328" virtual="non" meta="plain" const="false" static="false" overload="false" type="bool" signature="insertRowInTable(const QSqlRecord &amp; values)">
+                <parameter left="const QSqlRecord &amp;" right="" name="values" default=""/>
+            </function>
+            <function threadsafety="unspecified" name="updateRowInTable" fullname="LSqlTableModel::updateRowInTable" href="lsqltablemodel.html#updateRowInTable" access="private" status="commendable" location="lsqltablemodel.cpp" filepath="D:/MyProjects/Qt/LSqlTableModel/trunk/lsqltablemodel.cpp" lineno="315" virtual="non" meta="plain" const="false" static="false" overload="false" type="bool" signature="updateRowInTable(const QSqlRecord &amp; values)">
+                <parameter left="const QSqlRecord &amp;" right="" name="values" default=""/>
+            </function>
+            <function threadsafety="unspecified" name="selectRowInTable" fullname="LSqlTableModel::selectRowInTable" href="lsqltablemodel.html#selectRowInTable" access="private" status="commendable" location="lsqltablemodel.cpp" filepath="D:/MyProjects/Qt/LSqlTableModel/trunk/lsqltablemodel.cpp" lineno="295" virtual="non" meta="plain" const="false" static="false" overload="false" type="bool" signature="selectRowInTable(QSqlRecord &amp; values)">
+                <parameter left="QSqlRecord &amp;" right="" name="values" default=""/>
+            </function>
+            <function threadsafety="unspecified" name="reloadRow" fullname="LSqlTableModel::reloadRow" href="lsqltablemodel.html#reloadRow" access="private" status="commendable" location="lsqltablemodel.cpp" filepath="D:/MyProjects/Qt/LSqlTableModel/trunk/lsqltablemodel.cpp" lineno="281" virtual="non" meta="plain" const="false" static="false" overload="false" type="bool" signature="reloadRow(int row)">
+                <parameter left="int" right="" name="row" default=""/>
+            </function>
+            <function threadsafety="unspecified" name="columnCount" fullname="LSqlTableModel::columnCount" href="lsqltablemodel.html#columnCount" access="public" status="commendable" location="lsqltablemodel.h" filepath="D:/MyProjects/Qt/LSqlTableModel/trunk/lsqltablemodel.h" lineno="87" virtual="non" meta="plain" const="true" static="false" overload="false" type="int" signature="columnCount(const QModelIndex &amp; parent) const">
+                <parameter left="const QModelIndex &amp;" right="" name="parent" default="QModelIndex()"/>
+            </function>
+            <function threadsafety="unspecified" name="data" fullname="LSqlTableModel::data" href="lsqltablemodel.html#data" access="public" status="commendable" location="lsqltablemodel.h" filepath="D:/MyProjects/Qt/LSqlTableModel/trunk/lsqltablemodel.h" lineno="88" virtual="non" meta="plain" const="true" static="false" overload="false" type="QVariant" signature="data(const QModelIndex &amp; index, int role) const">
+                <parameter left="const QModelIndex &amp;" right="" name="index" default=""/>
+                <parameter left="int" right="" name="role" default="Qt::DisplayRole"/>
+            </function>
+            <function threadsafety="unspecified" name="submitRecord" fullname="LSqlTableModel::submitRecord" href="lsqltablemodel.html#submitRecord" access="private" status="commendable" location="lsqltablemodel.h" filepath="D:/MyProjects/Qt/LSqlTableModel/trunk/lsqltablemodel.h" lineno="117" virtual="non" meta="plain" const="false" static="false" overload="false" type="bool" signature="submitRecord(LSqlRecord &amp; rec)">
+                <parameter left="LSqlRecord &amp;" right="" name="rec" default=""/>
+            </function>
+            <function threadsafety="unspecified" name="setCacheAction" fullname="LSqlTableModel::setCacheAction" href="lsqltablemodel.html#setCacheAction" access="private" status="commendable" location="lsqltablemodel.h" filepath="D:/MyProjects/Qt/LSqlTableModel/trunk/lsqltablemodel.h" lineno="116" virtual="non" meta="plain" const="false" static="false" overload="false" type="void" signature="setCacheAction(LSqlRecord &amp; rec, LSqlRecord::CacheAction action)">
+                <parameter left="LSqlRecord &amp;" right="" name="rec" default=""/>
+                <parameter left="LSqlRecord::CacheAction" right="" name="action" default=""/>
+            </function>
+            <typedef threadsafety="unspecified" name="CacheMap" fullname="LSqlTableModel::CacheMap" href="lsqltablemodel.html#CacheMap-typedef" access="private" status="commendable" location="lsqltablemodel.h" filepath="D:/MyProjects/Qt/LSqlTableModel/trunk/lsqltablemodel.h" lineno="109"/>
+            <function threadsafety="unspecified" name="beforeInsert" fullname="LSqlTableModel::beforeInsert" href="lsqltablemodel.html#beforeInsert" access="public" status="commendable" location="lsqltablemodel.h" filepath="D:/MyProjects/Qt/LSqlTableModel/trunk/lsqltablemodel.h" lineno="97" virtual="non" meta="signal" const="false" static="false" overload="false" type="void" signature="beforeInsert(QSqlRecord &amp; rec)">
+                <parameter left="QSqlRecord &amp;" right="" name="rec" default=""/>
+            </function>
+            <function threadsafety="unspecified" name="beforeUpdate" fullname="LSqlTableModel::beforeUpdate" href="lsqltablemodel.html#beforeUpdate" access="public" status="commendable" location="lsqltablemodel.h" filepath="D:/MyProjects/Qt/LSqlTableModel/trunk/lsqltablemodel.h" lineno="98" virtual="non" meta="signal" const="false" static="false" overload="false" type="void" signature="beforeUpdate(QSqlRecord &amp; rec)">
+                <parameter left="QSqlRecord &amp;" right="" name="rec" default=""/>
+            </function>
+            <function threadsafety="unspecified" name="flags" fullname="LSqlTableModel::flags" href="lsqltablemodel.html#flags" access="public" status="commendable" location="lsqltablemodel.h" filepath="D:/MyProjects/Qt/LSqlTableModel/trunk/lsqltablemodel.h" lineno="90" virtual="non" meta="plain" const="true" static="false" overload="false" type="Qt::ItemFlags" signature="flags(const QModelIndex &amp; index) const">
+                <parameter left="const QModelIndex &amp;" right="" name="index" default=""/>
+            </function>
+            <function threadsafety="unspecified" name="headerData" fullname="LSqlTableModel::headerData" href="lsqltablemodel.html#headerData" access="public" status="commendable" location="lsqltablemodel.h" filepath="D:/MyProjects/Qt/LSqlTableModel/trunk/lsqltablemodel.h" lineno="91" virtual="non" meta="plain" const="true" static="false" overload="false" type="QVariant" signature="headerData(int section, Qt::Orientation orientation, int role) const">
+                <parameter left="int" right="" name="section" default=""/>
+                <parameter left="Qt::Orientation" right="" name="orientation" default=""/>
+                <parameter left="int" right="" name="role" default="Qt::DisplayRole"/>
+            </function>
+            <function threadsafety="unspecified" name="insertRows" fullname="LSqlTableModel::insertRows" href="lsqltablemodel.html#insertRows" access="public" status="commendable" location="lsqltablemodel.h" filepath="D:/MyProjects/Qt/LSqlTableModel/trunk/lsqltablemodel.h" lineno="93" virtual="non" meta="plain" const="false" static="false" overload="false" type="bool" signature="insertRows(int row, int count, const QModelIndex &amp; parent)">
+                <parameter left="int" right="" name="row" default=""/>
+                <parameter left="int" right="" name="count" default=""/>
+                <parameter left="const QModelIndex &amp;" right="" name="parent" default="QModelIndex()"/>
+            </function>
+            <function threadsafety="unspecified" name="reloadTable" fullname="LSqlTableModel::reloadTable" href="lsqltablemodel.html#reloadTable" access="public" status="commendable" location="lsqltablemodel.h" filepath="D:/MyProjects/Qt/LSqlTableModel/trunk/lsqltablemodel.h" lineno="80" virtual="non" meta="plain" const="false" static="false" overload="false" type="bool" signature="reloadTable()"/>
+            <function threadsafety="unspecified" name="removeRows" fullname="LSqlTableModel::removeRows" href="lsqltablemodel.html#removeRows" access="public" status="commendable" location="lsqltablemodel.h" filepath="D:/MyProjects/Qt/LSqlTableModel/trunk/lsqltablemodel.h" lineno="94" virtual="non" meta="plain" const="false" static="false" overload="false" type="bool" signature="removeRows(int row, int count, const QModelIndex &amp; parent)">
+                <parameter left="int" right="" name="row" default=""/>
+                <parameter left="int" right="" name="count" default=""/>
+                <parameter left="const QModelIndex &amp;" right="" name="parent" default="QModelIndex()"/>
+            </function>
+            <function threadsafety="unspecified" name="revertAll" fullname="LSqlTableModel::revertAll" href="lsqltablemodel.html#revertAll" access="public" status="commendable" location="lsqltablemodel.h" filepath="D:/MyProjects/Qt/LSqlTableModel/trunk/lsqltablemodel.h" lineno="84" virtual="non" meta="plain" const="false" static="false" overload="false" type="bool" signature="revertAll()"/>
+            <function threadsafety="unspecified" name="rowCount" fullname="LSqlTableModel::rowCount" href="lsqltablemodel.html#rowCount" access="public" status="commendable" location="lsqltablemodel.h" filepath="D:/MyProjects/Qt/LSqlTableModel/trunk/lsqltablemodel.h" lineno="86" virtual="non" meta="plain" const="true" static="false" overload="false" type="int" signature="rowCount(const QModelIndex &amp; parent) const">
+                <parameter left="const QModelIndex &amp;" right="" name="parent" default="QModelIndex()"/>
+            </function>
+            <function threadsafety="unspecified" name="setData" fullname="LSqlTableModel::setData" href="lsqltablemodel.html#setData" access="public" status="commendable" location="lsqltablemodel.h" filepath="D:/MyProjects/Qt/LSqlTableModel/trunk/lsqltablemodel.h" lineno="89" virtual="non" meta="plain" const="false" static="false" overload="false" type="bool" signature="setData(const QModelIndex &amp; index, const QVariant &amp; value, int role)">
+                <parameter left="const QModelIndex &amp;" right="" name="index" default=""/>
+                <parameter left="const QVariant &amp;" right="" name="value" default=""/>
+                <parameter left="int" right="" name="role" default="Qt::EditRole"/>
+            </function>
+            <function threadsafety="unspecified" name="setSequenceName" fullname="LSqlTableModel::setSequenceName" href="lsqltablemodel.html#setSequenceName" access="public" status="commendable" location="lsqltablemodel.h" filepath="D:/MyProjects/Qt/LSqlTableModel/trunk/lsqltablemodel.h" lineno="78" virtual="non" meta="plain" const="false" static="false" overload="false" type="void" signature="setSequenceName(QString name)">
+                <parameter left="QString" right="" name="name" default=""/>
+            </function>
+            <function threadsafety="unspecified" name="setTable" fullname="LSqlTableModel::setTable" href="lsqltablemodel.html#setTable" access="public" status="commendable" location="lsqltablemodel.h" filepath="D:/MyProjects/Qt/LSqlTableModel/trunk/lsqltablemodel.h" lineno="77" virtual="non" meta="plain" const="false" static="false" overload="false" type="bool" signature="setTable(QString tableName)">
+                <parameter left="QString" right="" name="tableName" default=""/>
+            </function>
+            <function threadsafety="unspecified" name="submitAll" fullname="LSqlTableModel::submitAll" href="lsqltablemodel.html#submitAll" access="public" status="commendable" location="lsqltablemodel.h" filepath="D:/MyProjects/Qt/LSqlTableModel/trunk/lsqltablemodel.h" lineno="82" virtual="non" meta="plain" const="false" static="false" overload="false" type="bool" signature="submitAll()"/>
+        </class>
+    </namespace>
+</INDEX>
