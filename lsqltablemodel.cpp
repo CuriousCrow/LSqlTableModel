@@ -31,21 +31,37 @@ bool LSqlTableModel::setTable(QString tableName)
   return true;
 }
 
+QString LSqlTableModel::tableName()
+{
+  return _tableName;
+}
+
+int LSqlTableModel::fieldIndex(QString fieldName)
+{
+  return _patternRec.indexOf(fieldName);
+}
+
 /*!
     Populates the model with table data
 */
-bool LSqlTableModel::reloadTable()
+bool LSqlTableModel::select()
 {
-  QString sql = "select * from %1";
-  if (!execQuery(sql.arg(_tableName))){
+  QString stmt = _db.driver()->sqlStatement(QSqlDriver::SelectStatement, _tableName,
+                                                   _patternRec, false);
+  QString where = _sqlFilter.isEmpty() ? "" : " where " + _sqlFilter;
+  QString sql = Sql::concat(stmt, where);
+  if (!execQuery(sql)){
     return false;
   }
-
+  beginResetModel();
+  clearData();
   //Заполнение индекса и карты записей
   while (_query.next()){
     _recIndex.append(_query.value("ID").toInt());
     _recMap.insert(_query.value("ID").toInt(), LSqlRecord(_query.record()));
   }
+  endResetModel();
+
   return true;
 }
 
@@ -206,6 +222,11 @@ bool LSqlTableModel::removeRows(int row, int count, const QModelIndex &parent)
   return true;
 }
 
+QSqlRecord LSqlTableModel::record(int row) const
+{
+  return _recMap.value(_recIndex[row]);
+}
+
 /*!
     Sets cache operation mark for the model row.
 */
@@ -341,6 +362,12 @@ bool LSqlTableModel::deleteRowInTable(const QSqlRecord &values)
                                                      values, false);
   QString sql = Sql::concat(stmt, where);
   return execQuery(sql);
+}
+
+void LSqlTableModel::clearData()
+{
+  _recIndex.clear();
+  _recMap.clear();
 }
 
 QSqlRecord LSqlTableModel::primaryValues(QSqlRecord rec) const

@@ -75,9 +75,12 @@ public:
   explicit LSqlTableModel(QObject *parent = 0, QSqlDatabase db = QSqlDatabase());
 
   bool setTable(QString tableName);
+  void setFilter(QString sqlFilter){ _sqlFilter = sqlFilter; }
+  QString tableName();
+  int fieldIndex(QString fieldName);
   void setSequenceName(QString name){ _sequenceName = name; }
   //Загрузка данных таблицы в модель
-  bool reloadTable();
+  bool select();
   //Сохранение всех закэшированных изменений
   bool submitAll();
   //Откат всех закэшированных изменений
@@ -93,6 +96,7 @@ public:
   bool insertRows(int row, int count, const QModelIndex & parent = QModelIndex());
   bool removeRows(int row, int count, const QModelIndex & parent = QModelIndex());
 
+  QSqlRecord record(int row) const;
 signals:
   void beforeInsert(QSqlRecord &rec);
   void beforeUpdate(QSqlRecord &rec);
@@ -103,6 +107,7 @@ private:
   QSqlQuery _query;
 
   QString _tableName;
+  QString _sqlFilter;
   QString _sequenceName;
 
   typedef QHash<long, LSqlRecord> CacheMap;
@@ -120,6 +125,7 @@ private:
   bool updateRowInTable(const QSqlRecord &values);
   bool insertRowInTable(const QSqlRecord &values);
   bool deleteRowInTable(const QSqlRecord &values);
+  void clearData();
   QSqlRecord primaryValues(QSqlRecord rec) const;
   //Получение следующего значения генератора
   int nextId();
