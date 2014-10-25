@@ -31,14 +31,51 @@ bool LSqlTableModel::setTable(QString tableName)
   return true;
 }
 
+void LSqlTableModel::setSort(int colIndex, Qt::SortOrder sortOrder)
+{
+  setSort(_patternRec.field(colIndex).name(), sortOrder);
+}
+
+void LSqlTableModel::setSort(QString colName, Qt::SortOrder sortOrder)
+{
+  QString orderByPattern = "order by %1 %2";
+  _orderByClause = orderByPattern.arg(colName,
+                                      sortOrder == Qt::AscendingOrder ? "asc" : "desc");
+}
+
 QString LSqlTableModel::tableName()
 {
   return _tableName;
 }
 
-int LSqlTableModel::fieldIndex(QString fieldName)
+void LSqlTableModel::setHeaders(QStringList strList)
+{
+  _headers.clear();
+  _headers.append(strList);
+  emit headerDataChanged(Qt::Horizontal, 0, _headers.count() - 1);
+}
+
+int LSqlTableModel::fieldIndex(QString fieldName) const
 {
   return _patternRec.indexOf(fieldName);
+}
+
+bool LSqlTableModel::isDirty(const QModelIndex &index) const
+{
+  if (!index.isValid())
+    return false;
+  LSqlRecord rec = _recMap[_recIndex[index.row()]];
+  return rec.cacheAction() != LSqlRecord::None;
+}
+
+bool LSqlTableModel::isDirty() const
+{
+  return _modified;
+}
+
+void LSqlTableModel::setCacheAction(int recId, LSqlRecord::CacheAction action)
+{
+  setCacheAction(_recMap[recId], action);
 }
 
 /*!
@@ -46,11 +83,7 @@ int LSqlTableModel::fieldIndex(QString fieldName)
 */
 bool LSqlTableModel::select()
 {
-  QString stmt = _db.driver()->sqlStatement(QSqlDriver::SelectStatement, _tableName,
-                                                   _patternRec, false);
-  QString where = _sqlFilter.isEmpty() ? "" : " where " + _sqlFilter;
-  QString sql = Sql::concat(stmt, where);
-  if (!execQuery(sql)){
+  if (!execQuery(selectAllSql())){
     return false;
   }
   beginResetModel();
@@ -65,13 +98,19 @@ bool LSqlTableModel::select()
   return true;
 }
 
+bool LSqlTableModel::submitRow(int row)
+{
+  long id = _recIndex.at(row);
+  return submitRecord(_recMap[id]);
+}
+
 /*!
     Trys to submit all cached (unsaved) changes to the database table.
     Returns \c true if all cached changes were successfully submitted.
 */
 bool LSqlTableModel::submitAll()
 {
-  //Если не было изменений, сразу выход
+  //Nothing to submit
   if (!_modified)
     return true;
 
@@ -121,6 +160,15 @@ QVariant LSqlTableModel::data(const QModelIndex &index, int role) const
 }
 
 /*!
+    Overloaded convinient method data() to get item value by row and column name.
+*/
+QVariant LSqlTableModel::data(int row, QString columnName, int role)
+{
+  QModelIndex index = this->index(row, fieldIndex(columnName));
+  return data(index, role);
+}
+
+/*!
     Overriden virtual method that used to save the data to the model.
     Rows modified by this method would be marked with cache action \c LSqlRecord::Update 
     unless they are already marked with cache action \c LSqlRecord::Insert.
@@ -128,13 +176,21 @@ QVariant LSqlTableModel::data(const QModelIndex &index, int role) const
 bool LSqlTableModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
   qDebug() << "old val: " << data(index) << "new data: " << value;
-  if (role == Qt::EditRole && data(index) != value){
+  if (role == Qt::EditRole && (isNull(index) || data(index) != value)){
     LSqlRecord &rec = _recMap[_recIndex.at(index.row())];
-    rec.setValue(index.column(), value);
+    qDebug() << rec.field(index.column()).isNull();
     emit beforeUpdate(rec);
-    setCacheAction(rec, LSqlRecord::Update);
+    rec.setValue(index.column(), value);
+    setCacheAction(rec, LSqlRecord::Update);    
+    qDebug() << rec.field(index.column()).isNull();
   }
   return true;
+}
+
+bool LSqlTableModel::setData(int row, QString columnName, QVariant value, int role)
+{
+  QModelIndex index = this->index(row, fieldIndex(columnName));
+  return setData(index, value, role);
 }
 
 /*!
@@ -145,7 +201,7 @@ Qt::ItemFlags LSqlTableModel::flags(const QModelIndex &index) const
 {
   if (!index.isValid())
     return 0;
-  //Первичный ключ редактировать нельзя
+  //Editing primary key values is forbidden
   if (_primaryIndex.indexOf(_patternRec.fieldName(index.column())) >= 0){
     return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
   }
@@ -162,7 +218,7 @@ QVariant LSqlTableModel::headerData(int section, Qt::Orientation orientation, in
       return section;
     }
     else {
-      return _patternRec.fieldName(section);
+      return _headers.count() > section ? _headers[section] : _patternRec.fieldName(section);
     }
   }
   return QVariant();
@@ -175,19 +231,20 @@ QVariant LSqlTableModel::headerData(int section, Qt::Orientation orientation, in
 */
 bool LSqlTableModel::insertRows(int row, int count, const QModelIndex &parent)
 {
-  //Только для таблиц и по одной строке
+  //Works only for table models and only one row at time
   if (parent.isValid() || count > 1)
     return false;
 
-  //Пробуем получить ID для новой записи
-  int newId = nextId();
+  //Trying to get next id value
+  int newId = nextSequenceNumber();
   if (newId < 0)
     return false;
 
   LSqlRecord newRec(_patternRec);
+  newRec.clearValues();
   newRec.setValue("ID", QVariant(newId));
 
-  //сигнал для инициализации новой строки (записи)
+  //Signal to initialize the row with default values
   emit beforeInsert(newRec);
 
   setCacheAction(newRec, LSqlRecord::Insert);
@@ -205,15 +262,18 @@ bool LSqlTableModel::insertRows(int row, int count, const QModelIndex &parent)
 */
 bool LSqlTableModel::removeRows(int row, int count, const QModelIndex &parent)
 {
-  //Только для таблиц и по одной строке
+  //Works only for table models and only one row at a time
   if (parent.isValid() || count > 1)
     return false;
 
-  QSqlRecord delRec(_primaryIndex);
-  delRec.setValue("ID", (int)_recIndex.at(row));
+  //No need to delete record in DB if it isn't there yet
+  if (_recMap.value(_recIndex[row]).cacheAction() != LSqlRecord::Insert){
+    QSqlRecord delRec(_primaryIndex);
+    delRec.setValue("ID", (int)_recIndex.at(row));
 
-  if (!deleteRowInTable(delRec))
-    return false;
+    if (!deleteRowInTable(delRec))
+      return false;
+  }
 
   beginRemoveRows(parent, row, row + count - 1);
   _recMap.remove(_recIndex[row]);
@@ -227,12 +287,17 @@ QSqlRecord LSqlTableModel::record(int row) const
   return _recMap.value(_recIndex[row]);
 }
 
+QSqlRecord* LSqlTableModel::recordById(int id)
+{  
+  return _recMap.contains(id) ? &_recMap[id] : 0;
+}
+
 /*!
     Sets cache operation mark for the model row.
 */
 void LSqlTableModel::setCacheAction(LSqlRecord &rec, LSqlRecord::CacheAction action)
 {
-  //Вставленная запись остается вставленной, даже если ее редактировать
+  //Row that was inserted keeps LSqlRecord::Insert status after editing
   if (rec.cacheAction() == LSqlRecord::Insert && action == LSqlRecord::Update)
     return;
 
@@ -246,7 +311,7 @@ void LSqlTableModel::setCacheAction(LSqlRecord &rec, LSqlRecord::CacheAction act
 */
 bool LSqlTableModel::submitRecord(LSqlRecord &rec)
 {
-  //Запись не редактировалась
+  //Record is not modified
   if (rec.cacheAction() == LSqlRecord::None)
     return true;
 
@@ -272,7 +337,7 @@ bool LSqlTableModel::submitRecord(LSqlRecord &rec)
 */
 bool LSqlTableModel::revertAll()
 {
-  //Если не было изменений, сразу выход
+  //No changes to the model
   if (!_modified)
     return true;
 
@@ -307,10 +372,21 @@ bool LSqlTableModel::reloadRow(int row)
   bool result = selectRowInTable(rec);
   if (result){
     rec.setCacheAction(LSqlRecord::None);
-    //Сигнал представлению, что надо обновить данные строки
+    //Signal for views that row was updated
     emit dataChanged(createIndex(row, 0), createIndex(row, columnCount() - 1));
   }
   return result;
+}
+
+/*!
+  Check if field corresponding to index marked by isNull flag
+*/
+bool LSqlTableModel::isNull(const QModelIndex &index)
+{
+  if (!index.isValid())
+    return true;
+  LSqlRecord& rec = _recMap[_recIndex[index.row()]];
+  return rec.field(index.column()).isNull();
 }
 
 bool LSqlTableModel::selectRowInTable(QSqlRecord &values)
@@ -322,7 +398,7 @@ bool LSqlTableModel::selectRowInTable(QSqlRecord &values)
                                                      whereValues, false);
   QString sql = Sql::concat(stmt, where);
   bool result = execQuery(sql);
-  //Если запрос выполнен и есть результат
+  //Query was successfully executed and returns a record
   if (result && _query.next()){
     QSqlRecord resRec = _query.record();
     for(int i = 0; i < resRec.count(); i++){
@@ -379,11 +455,32 @@ QSqlRecord LSqlTableModel::primaryValues(QSqlRecord rec) const
   return r;
 }
 
+int LSqlTableModel::primaryKey(int row, int part)
+{
+  if (part >= _primaryIndex.count())
+    part = 0;
+  return data(row, primaryKeyName(part)).toInt();
+}
+
+QString LSqlTableModel::primaryKeyName(int part)
+{
+  Q_ASSERT(part >= 0);
+  return _primaryIndex.fieldName(part);
+}
+
+QString LSqlTableModel::selectAllSql()
+{
+  QString stmt = _db.driver()->sqlStatement(QSqlDriver::SelectStatement, _tableName,
+                                                   _patternRec, false);
+  QString where = _sqlFilter.isEmpty() ? "" : " where " + _sqlFilter;
+  return Sql::concat(Sql::concat(stmt, where), _orderByClause);
+}
+
 /*!
     Returns a subsequent value of the database generator (sequence).
     Name of the generator can be set by method \c setSequenceName.
 */
-int LSqlTableModel::nextId()
+int LSqlTableModel::nextSequenceNumber()
 {
   if (_sequenceName.isEmpty()){
     qDebug() << "No sequence specified for table " << _tableName;
@@ -412,6 +509,16 @@ bool LSqlTableModel::execQuery(const QString &sql)
     qDebug() << "Error: " << _query.lastError().databaseText();
   }
   return result;
+}
+
+QVariant LSqlTableModel::execQuery(const QString &sql, QString resColumn)
+{
+  if (execQuery(sql) && _query.next()){
+    return _query.value(resColumn);
+  }
+  else {
+    return QVariant();
+  }
 }
 
 

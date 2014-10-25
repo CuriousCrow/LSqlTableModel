@@ -63,7 +63,7 @@ public:
   enum CacheAction {None, Insert, Update, Delete};
 
   void setCacheAction(CacheAction action){ _cacheAction = action; }
-  CacheAction cacheAction(){ return _cacheAction; }
+  CacheAction cacheAction() const { return _cacheAction; }
 private:
   CacheAction _cacheAction;
 };
@@ -76,20 +76,33 @@ public:
 
   bool setTable(QString tableName);
   void setFilter(QString sqlFilter){ _sqlFilter = sqlFilter; }
+  void setSort(int colIndex, Qt::SortOrder sortOrder);
+  void setSort(QString colName, Qt::SortOrder sortOrder);
   QString tableName();
-  int fieldIndex(QString fieldName);
+
+  void setHeaders(QStringList strList);
+
+  int fieldIndex(QString fieldName) const;
+  bool isDirty(const QModelIndex & index) const;
+  bool isDirty() const;
+  void setCacheAction(int recId, LSqlRecord::CacheAction action);
+
   void setSequenceName(QString name){ _sequenceName = name; }
-  //Загрузка данных таблицы в модель
+  //Populate model with table data
   bool select();
-  //Сохранение всех закэшированных изменений
+  //Submit one record by row
+  bool submitRow(int row);
+  //Submit all cached changes to database
   bool submitAll();
-  //Откат всех закэшированных изменений
+  //Revert all cached changes
   bool revertAll();
 
   int rowCount(const QModelIndex & parent = QModelIndex()) const;
   int columnCount(const QModelIndex & parent = QModelIndex()) const;
   QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const;
+  QVariant data(int row, QString columnName, int role = Qt::DisplayRole);
   bool setData(const QModelIndex & index, const QVariant & value, int role = Qt::EditRole);
+  bool setData(int row, QString columnName, QVariant value, int role = Qt::EditRole);
   Qt::ItemFlags flags(const QModelIndex & index) const ;
   QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const;
 
@@ -97,40 +110,52 @@ public:
   bool removeRows(int row, int count, const QModelIndex & parent = QModelIndex());
 
   QSqlRecord record(int row) const;
+  QSqlRecord* recordById(int id);
+  QSqlRecord patternRecord() { return _patternRec; }
+
+  //TODO: Сделать статическим методом
+  QVariant execQuery(const QString &sql, QString resColumn);
+  //Wrapper for all sql-queries (for debugging)
+  bool execQuery(const QString &sql);
 signals:
   void beforeInsert(QSqlRecord &rec);
   void beforeUpdate(QSqlRecord &rec);
 public slots:
 
 private:
-  QSqlDatabase _db;
-  QSqlQuery _query;
-
-  QString _tableName;
-  QString _sqlFilter;
+  QString _orderByClause;
   QString _sequenceName;
+  QStringList _headers;
 
   typedef QHash<long, LSqlRecord> CacheMap;
   CacheMap _recMap;
-  QList<long> _recIndex;
 
-  QSqlRecord _patternRec;
-  QSqlIndex _primaryIndex;
   bool _modified = false;
 
   void setCacheAction(LSqlRecord &rec, LSqlRecord::CacheAction action);
   bool submitRecord(LSqlRecord &rec);
   bool reloadRow(int row);
-  bool selectRowInTable(QSqlRecord &values);
-  bool updateRowInTable(const QSqlRecord &values);
-  bool insertRowInTable(const QSqlRecord &values);
-  bool deleteRowInTable(const QSqlRecord &values);
+  bool isNull(const QModelIndex &index);
   void clearData();
+  //Get next sequence value
+  int nextSequenceNumber();
+protected:
   QSqlRecord primaryValues(QSqlRecord rec) const;
-  //Получение следующего значения генератора
-  int nextId();
-  //Обертка для sql-запрос для отладки
-  bool execQuery(const QString &sql);
+  int primaryKey(int row, int part = 0);
+  QString primaryKeyName(int part = 0);
+  QSqlIndex _primaryIndex;
+  QList<long> _recIndex;
+  QString _tableName;
+  QString _sqlFilter;
+  QSqlRecord _patternRec;
+  QSqlDatabase _db;
+  QSqlQuery _query;
+
+  virtual QString selectAllSql();
+  virtual bool selectRowInTable(QSqlRecord &values);
+  virtual bool updateRowInTable(const QSqlRecord &values);
+  virtual bool insertRowInTable(const QSqlRecord &values);
+  virtual bool deleteRowInTable(const QSqlRecord &values);
 };
 
 #endif // LSQLTABLEMODEL_H
