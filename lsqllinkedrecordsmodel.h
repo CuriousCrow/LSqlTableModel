@@ -3,11 +3,13 @@
 
 #include "lsqltablemodel.h"
 
+typedef QSqlHelper Sql;
+
 class LSqlLinkedRecordsModel : public LSqlTableModel
 {
   Q_OBJECT
 public:
-  explicit LSqlLinkedRecordsModel(QObject *parent = 0);
+  explicit LSqlLinkedRecordsModel(QObject *parent = 0, QSqlDatabase db = QSqlDatabase());
   void setLinkField(QString name){ _linkField = name; }
   void setInitialLinkValue(QVariant value){ _initialLinkValue = value; }
 
@@ -16,6 +18,7 @@ protected:
 private:
   QString _linkField;
   QVariant _initialLinkValue = 0;
+  QString initialRecWhere();
 public:
   virtual void sort(int column, Qt::SortOrder order);
   virtual bool insertRows(int row, int count, const QModelIndex &parent);

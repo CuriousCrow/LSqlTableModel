@@ -32,6 +32,8 @@ public:
     inline const static QLatin1String select() { return QLatin1String("SELECT"); }
     inline const static QLatin1String sp() { return QLatin1String(" "); }
     inline const static QLatin1String where() { return QLatin1String("WHERE"); }
+    inline const static QLatin1String is() { return QLatin1String("IS"); }
+    inline const static QLatin1String null() { return QLatin1String("NULL"); }
 
     // Build expressions based on key words
     inline const static QString as(const QString &a, const QString &b) { return b.isEmpty() ? a : concat(concat(a, as()), b); }
@@ -48,6 +50,7 @@ public:
     inline const static QString paren(const QString &s) { return s.isEmpty() ? s : parenOpen() + s + parenClose(); }
     inline const static QString select(const QString &s) { return concat(select(), s); }
     inline const static QString where(const QString &s) { return s.isEmpty() ? s : concat(where(), s); }
+    inline const static QString isNull(const QString &s) { return concat(s, concat(is(),null())); }
 };
 
 QT_END_NAMESPACE
@@ -75,10 +78,11 @@ public:
   explicit LSqlTableModel(QObject *parent = 0, QSqlDatabase db = QSqlDatabase());
 
   bool setTable(QString tableName);
+  QString tableName();
   void setFilter(QString sqlFilter){ _sqlFilter = sqlFilter; }
+  QString filter(){ return _sqlFilter; }
   void setSort(int colIndex, Qt::SortOrder sortOrder);
   void setSort(QString colName, Qt::SortOrder sortOrder);
-  QString tableName();
 
   void setHeaders(QStringList strList);
 
@@ -120,15 +124,18 @@ public:
 signals:
   void beforeInsert(QSqlRecord &rec);
   void beforeUpdate(QSqlRecord &rec);
-public slots:
-
 private:
+  QString _tableName;
+  QString _sqlFilter;
   QString _orderByClause;
   QString _sequenceName;
   QStringList _headers;
 
   typedef QHash<long, LSqlRecord> CacheMap;
   CacheMap _recMap;
+  QSqlIndex _primaryIndex;
+  QList<long> _recIndex;
+  QSqlRecord _patternRec;
 
   bool _modified = false;
 
@@ -143,11 +150,7 @@ protected:
   QSqlRecord primaryValues(QSqlRecord rec) const;
   int primaryKey(int row, int part = 0);
   QString primaryKeyName(int part = 0);
-  QSqlIndex _primaryIndex;
-  QList<long> _recIndex;
-  QString _tableName;
-  QString _sqlFilter;
-  QSqlRecord _patternRec;
+  int primaryKeyCount();
   QSqlDatabase _db;
   QSqlQuery _query;
 

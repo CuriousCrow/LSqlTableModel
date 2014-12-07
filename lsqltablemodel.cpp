@@ -174,15 +174,15 @@ QVariant LSqlTableModel::data(int row, QString columnName, int role)
     unless they are already marked with cache action \c LSqlRecord::Insert.
 */
 bool LSqlTableModel::setData(const QModelIndex &index, const QVariant &value, int role)
-{
-  qDebug() << "old val: " << data(index) << "new data: " << value;
-  if (role == Qt::EditRole && (isNull(index) || data(index) != value)){
+{  
+  //TODO: isNull(index) condition should be checked
+  if (role == Qt::EditRole && (data(index) != value)){
     LSqlRecord &rec = _recMap[_recIndex.at(index.row())];
-    qDebug() << rec.field(index.column()).isNull();
     emit beforeUpdate(rec);
     rec.setValue(index.column(), value);
     setCacheAction(rec, LSqlRecord::Update);    
-    qDebug() << rec.field(index.column()).isNull();
+    qDebug() << "Record" << index.row() << "updated:"
+             << data(index) << "->" << value;
   }
   return true;
 }
@@ -466,6 +466,11 @@ QString LSqlTableModel::primaryKeyName(int part)
 {
   Q_ASSERT(part >= 0);
   return _primaryIndex.fieldName(part);
+}
+
+int LSqlTableModel::primaryKeyCount()
+{
+  return _primaryIndex.count();
 }
 
 QString LSqlTableModel::selectAllSql()
