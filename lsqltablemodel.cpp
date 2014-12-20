@@ -62,6 +62,10 @@ void LSqlTableModel::addLookupField(LSqlTableModel *lookupModel, QString keyFiel
   field.keyField = keyField;
   field.lookupField = lookupField;
   _lookupFields.append(field);
+  //Changes in lookup model considered as changes of the model
+  //TODO: this situation should be handled more correctly
+  connect(lookupModel, SIGNAL(dataChanged(QModelIndex,QModelIndex)),
+          this, SIGNAL(dataChanged(QModelIndex,QModelIndex)));
 }
 
 int LSqlTableModel::fieldIndex(QString fieldName) const
@@ -69,10 +73,12 @@ int LSqlTableModel::fieldIndex(QString fieldName) const
   int index = _patternRec.indexOf(fieldName);
   if (index < 0){
     for(int i=0; i<_lookupFields.count(); i++){
-      if (_lookupFields.at(i).name() == fieldName)
-        return i;
+      if (_lookupFields.at(i).lookupField == fieldName)
+        return _patternRec.count() + i;
     }
   }
+  if (index < 0)
+    qDebug() << "Model" << objectName() << "contains no field named" << fieldName;
   return index;
 }
 
@@ -319,6 +325,19 @@ bool LSqlTableModel::removeRows(int row, int count, const QModelIndex &parent)
 QSqlRecord LSqlTableModel::record(int row) const
 {
   return _recMap.value(_recIndex[row]);
+}
+
+int LSqlTableModel::rowByValue(QString field, QVariant value)
+{
+  int fieldIdx = fieldIndex(field);
+  if (fieldIdx < 0)
+    return -1;
+  for (int i=0; i<rowCount(); i++){
+    QSqlRecord rec = record(i);
+    if (rec.value(fieldIdx) == value)
+      return i;
+  }
+  return -1;
 }
 
 QSqlRecord* LSqlTableModel::recordById(int id)

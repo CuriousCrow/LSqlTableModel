@@ -118,6 +118,7 @@ public:
   bool removeRows(int row, int count, const QModelIndex & parent = QModelIndex());
 
   QSqlRecord record(int row) const;
+  int rowByValue(QString field, QVariant value);
   QSqlRecord* recordById(int id);
   QSqlRecord patternRecord() { return _patternRec; }
 
