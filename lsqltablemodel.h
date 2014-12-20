@@ -57,6 +57,8 @@ QT_END_NAMESPACE
 
 typedef QSqlHelper Sql;
 
+class LLookupField;
+
 class LSqlRecord : public QSqlRecord
 {
 public:
@@ -86,6 +88,8 @@ public:
 
   void setHeaders(QStringList strList);
 
+  void addLookupField(LSqlTableModel* lookupModel, QString keyField, QString lookupField);
+
   int fieldIndex(QString fieldName) const;
   bool isDirty(const QModelIndex & index) const;
   bool isDirty() const;
@@ -93,7 +97,7 @@ public:
 
   void setSequenceName(QString name){ _sequenceName = name; }
   //Populate model with table data
-  bool select();
+  virtual bool select();
   //Submit one record by row
   bool submitRow(int row);
   //Submit all cached changes to database
@@ -132,10 +136,9 @@ private:
   QStringList _headers;
 
   typedef QHash<long, LSqlRecord> CacheMap;
-  CacheMap _recMap;
   QSqlIndex _primaryIndex;
-  QList<long> _recIndex;
   QSqlRecord _patternRec;
+  QList<LLookupField> _lookupFields;
 
   bool _modified = false;
 
@@ -143,10 +146,13 @@ private:
   bool submitRecord(LSqlRecord &rec);
   bool reloadRow(int row);
   bool isNull(const QModelIndex &index);
-  void clearData();
   //Get next sequence value
   int nextSequenceNumber();
 protected:
+  CacheMap _recMap;
+  QList<long> _recIndex;
+
+  void clearData();
   QSqlRecord primaryValues(QSqlRecord rec) const;
   int primaryKey(int row, int part = 0);
   QString primaryKeyName(int part = 0);
@@ -159,6 +165,15 @@ protected:
   virtual bool updateRowInTable(const QSqlRecord &values);
   virtual bool insertRowInTable(const QSqlRecord &values);
   virtual bool deleteRowInTable(const QSqlRecord &values);
+};
+
+class LLookupField : public QSqlField
+{
+public:
+  LSqlTableModel* lookupModel;
+  QString lookupField;
+  QString keyField;
+  QVariant date(int key);
 };
 
 #endif // LSQLTABLEMODEL_H

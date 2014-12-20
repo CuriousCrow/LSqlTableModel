@@ -55,9 +55,25 @@ void LSqlTableModel::setHeaders(QStringList strList)
   emit headerDataChanged(Qt::Horizontal, 0, _headers.count() - 1);
 }
 
+void LSqlTableModel::addLookupField(LSqlTableModel *lookupModel, QString keyField, QString lookupField)
+{
+  LLookupField field = LLookupField();
+  field.lookupModel = lookupModel;
+  field.keyField = keyField;
+  field.lookupField = lookupField;
+  _lookupFields.append(field);
+}
+
 int LSqlTableModel::fieldIndex(QString fieldName) const
 {
-  return _patternRec.indexOf(fieldName);
+  int index = _patternRec.indexOf(fieldName);
+  if (index < 0){
+    for(int i=0; i<_lookupFields.count(); i++){
+      if (_lookupFields.at(i).name() == fieldName)
+        return i;
+    }
+  }
+  return index;
 }
 
 bool LSqlTableModel::isDirty(const QModelIndex &index) const
@@ -136,7 +152,7 @@ int LSqlTableModel::rowCount(const QModelIndex &parent) const
 */
 int LSqlTableModel::columnCount(const QModelIndex &parent) const
 {
-  return _patternRec.count();
+  return _patternRec.count() + _lookupFields.count();
 }
 
 /*!
@@ -148,11 +164,18 @@ QVariant LSqlTableModel::data(const QModelIndex &index, int role) const
   if (!index.isValid())
     return QVariant();
   switch (role) {
-    case Qt::DisplayRole:
+    case Qt::DisplayRole:    
     case Qt::EditRole:
-    {
+    {      
       LSqlRecord rec = _recMap[_recIndex.at(index.row())];
-      return rec.value(index.column());
+      if (index.column() >= rec.count()){
+        LLookupField lookupField = _lookupFields.at(index.column() - rec.count());
+        int key = rec.value(lookupField.keyField).toInt();
+        return lookupField.date(key);
+      }
+      else {
+        return rec.value(index.column());
+      }
     }
     default:
       return QVariant();
@@ -176,13 +199,15 @@ QVariant LSqlTableModel::data(int row, QString columnName, int role)
 bool LSqlTableModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {  
   //TODO: isNull(index) condition should be checked
-  if (role == Qt::EditRole && (data(index) != value)){
+  if (role == Qt::EditRole &&
+      ((isNull(index) && !value.isNull()) || data(index) != value)){
     LSqlRecord &rec = _recMap[_recIndex.at(index.row())];
     emit beforeUpdate(rec);
     rec.setValue(index.column(), value);
     setCacheAction(rec, LSqlRecord::Update);    
     qDebug() << "Record" << index.row() << "updated:"
              << data(index) << "->" << value;
+    emit dataChanged(index, index);
   }
   return true;
 }
@@ -202,7 +227,8 @@ Qt::ItemFlags LSqlTableModel::flags(const QModelIndex &index) const
   if (!index.isValid())
     return 0;
   //Editing primary key values is forbidden
-  if (_primaryIndex.indexOf(_patternRec.fieldName(index.column())) >= 0){
+  if (_primaryIndex.indexOf(_patternRec.fieldName(index.column())) >= 0 ||
+      _patternRec.count() <= index.column()){
     return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
   }
   return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable;
@@ -218,7 +244,15 @@ QVariant LSqlTableModel::headerData(int section, Qt::Orientation orientation, in
       return section;
     }
     else {
-      return _headers.count() > section ? _headers[section] : _patternRec.fieldName(section);
+      if (_headers.count() > section) {
+        return _headers[section];
+      }
+      else {
+        if (_patternRec.count() > section)
+          return _patternRec.fieldName(section);
+        else
+          return _lookupFields.at(section -_patternRec.count()).lookupField;
+      }
     }
   }
   return QVariant();
@@ -386,7 +420,9 @@ bool LSqlTableModel::isNull(const QModelIndex &index)
   if (!index.isValid())
     return true;
   LSqlRecord& rec = _recMap[_recIndex[index.row()]];
-  return rec.field(index.column()).isNull();
+  QSqlField field = rec.field(index.column());
+  QVariant varVal = field.value();
+  return field.isNull();
 }
 
 bool LSqlTableModel::selectRowInTable(QSqlRecord &values)
@@ -535,4 +571,16 @@ LSqlRecord::LSqlRecord(): QSqlRecord()
 LSqlRecord::LSqlRecord(const QSqlRecord &rec): QSqlRecord(rec)
 {
   _cacheAction = LSqlRecord::None;
+}
+
+
+QVariant LLookupField::date(int key)
+{
+  QSqlRecord* rec = lookupModel->recordById(key);
+  if (rec == 0){
+    return QVariant();
+  }
+  else {
+    return rec->value(lookupField);
+  }
 }

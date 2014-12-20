@@ -1,43 +1,40 @@
 #include "lsqllinkedrecordsmodel.h"
-#include <QDebug>
 
 LSqlLinkedRecordsModel::LSqlLinkedRecordsModel(QObject *parent, QSqlDatabase db) :
   LSqlTableModel(parent, db)
 {
 }
 
+bool LSqlLinkedRecordsModel::select()
+{
+  if (!execQuery(selectAllSql())){
+    return false;
+  }
+  beginResetModel();
+  clearData();
+  QMap<int, QSqlRecord> tempMap = QMap<int, QSqlRecord>();
+  //filling of record map
+  while (_query.next()){
+    tempMap.insert(_query.value(_linkField).toInt(), _query.record());
+  }
+  int parentId = _initialLinkValue.toInt();
+  while (true){
+    if (!tempMap.contains(parentId))
+      break;
+    QSqlRecord rec = tempMap.value(parentId);
+    _recIndex.append(rec.value("ID").toInt());
+    _recMap.insert(rec.value("ID").toInt(), LSqlRecord(rec));
+    parentId = rec.value("ID").toInt();
+  }
+  endResetModel();
+
+  return true;
+}
+
 void LSqlLinkedRecordsModel::sort(int column, Qt::SortOrder order)
 {
-  //Sorting makes no sense with linked records table
+  //sorting makes no sense in a such model type
 }
-
-
-QString LSqlLinkedRecordsModel::selectAllSql()
-{
-  if (primaryKeyCount() == 1 && fieldIndex(_linkField) >= 0){
-    QString sqlTemplate = "WITH RECURSIVE Rec AS (%1 where %2 %3\nUNION ALL\n%1, Rec WHERE %4 = Rec.%5)\nSELECT * FROM Rec";
-    QString sqlNormalSelect =
-      _db.driver()->sqlStatement(QSqlDriver::SelectStatement, tableName(), patternRecord(), false);
-    QString firstRecFilter = initialRecWhere();
-    QString where = filter().isEmpty() ? "" : "and " + filter();
-    return sqlTemplate.arg(sqlNormalSelect, firstRecFilter, where, _linkField, primaryKeyName(0));
-  }
-  else {
-    qDebug() << "Primary key must be simple and proper linkField should be set";
-    return LSqlTableModel::selectAllSql();
-  }
-}
-
-QString LSqlLinkedRecordsModel::initialRecWhere()
-{
-  if (_initialLinkValue == QVariant()){
-    return Sql::isNull(_linkField);
-  }
-  else {
-    return Sql::concat(_linkField,Sql::concat(Sql::eq(),_initialLinkValue.toString()));
-  }
-}
-
 
 bool LSqlLinkedRecordsModel::insertRows(int row, int count, const QModelIndex &parent)
 {
