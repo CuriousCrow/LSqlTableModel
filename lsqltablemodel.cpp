@@ -110,7 +110,7 @@ bool LSqlTableModel::select()
   }
   beginResetModel();
   clearData();
-  //Заполнение индекса и карты записей
+  //Fills index and data map with query result data
   while (_query.next()){
     _recIndex.append(_query.value("ID").toLongLong());
     _recMap.insert(_query.value("ID").toLongLong(), LSqlRecord(_query.record()));

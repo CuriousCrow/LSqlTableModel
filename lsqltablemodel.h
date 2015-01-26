@@ -122,7 +122,7 @@ public:
   QSqlRecord* recordById(qlonglong id);
   QSqlRecord patternRecord() { return _patternRec; }
 
-  //TODO: Сделать статическим методом
+  //TODO: Should be static method
   QVariant execQuery(const QString &sql, QString resColumn);
   //Wrapper for all sql-queries (for debugging)
   bool execQuery(const QString &sql);
