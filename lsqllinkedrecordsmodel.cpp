@@ -34,6 +34,10 @@ bool LSqlLinkedRecordsModel::select()
 void LSqlLinkedRecordsModel::sort(int column, Qt::SortOrder order)
 {
   //sorting makes no sense in a such model type
+
+  //supressing warnings
+  std::ignore = column;
+  std::ignore = order;
 }
 
 bool LSqlLinkedRecordsModel::insertRows(int row, int count, const QModelIndex &parent)

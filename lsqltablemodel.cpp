@@ -150,6 +150,7 @@ bool LSqlTableModel::submitAll()
 */
 int LSqlTableModel::rowCount(const QModelIndex &parent) const
 {
+  std::ignore = parent;
   return _recMap.count();
 }
 
@@ -158,6 +159,7 @@ int LSqlTableModel::rowCount(const QModelIndex &parent) const
 */
 int LSqlTableModel::columnCount(const QModelIndex &parent) const
 {
+  std::ignore = parent;
   return _patternRec.count() + _lookupFields.count();
 }
 
