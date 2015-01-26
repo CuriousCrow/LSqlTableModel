@@ -93,7 +93,7 @@ public:
   int fieldIndex(QString fieldName) const;
   bool isDirty(const QModelIndex & index) const;
   bool isDirty() const;
-  void setCacheAction(int recId, LSqlRecord::CacheAction action);
+  void setCacheAction(qlonglong recId, LSqlRecord::CacheAction action);
 
   void setSequenceName(QString name){ _sequenceName = name; }
   //Populate model with table data
@@ -119,7 +119,7 @@ public:
 
   QSqlRecord record(int row) const;
   int rowByValue(QString field, QVariant value);
-  QSqlRecord* recordById(int id);
+  QSqlRecord* recordById(qlonglong id);
   QSqlRecord patternRecord() { return _patternRec; }
 
   //TODO: Сделать статическим методом
@@ -136,7 +136,7 @@ private:
   QString _sequenceName;
   QStringList _headers;
 
-  typedef QHash<long, LSqlRecord> CacheMap;
+  typedef QHash<qlonglong, LSqlRecord> CacheMap;
   QSqlIndex _primaryIndex;
   QSqlRecord _patternRec;
   QList<LLookupField> _lookupFields;
@@ -148,14 +148,14 @@ private:
   bool reloadRow(int row);
   bool isNull(const QModelIndex &index);
   //Get next sequence value
-  int nextSequenceNumber();
+  qlonglong nextSequenceNumber();
 protected:
   CacheMap _recMap;
-  QList<long> _recIndex;
+  QList<qlonglong> _recIndex;
 
   void clearData();
   QSqlRecord primaryValues(QSqlRecord rec) const;
-  int primaryKey(int row, int part = 0);
+  qlonglong primaryKey(int row, int part = 0);
   QString primaryKeyName(int part = 0);
   int primaryKeyCount();
   QSqlDatabase _db;

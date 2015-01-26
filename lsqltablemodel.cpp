@@ -95,7 +95,7 @@ bool LSqlTableModel::isDirty() const
   return _modified;
 }
 
-void LSqlTableModel::setCacheAction(int recId, LSqlRecord::CacheAction action)
+void LSqlTableModel::setCacheAction(qlonglong recId, LSqlRecord::CacheAction action)
 {
   setCacheAction(_recMap[recId], action);
 }
@@ -112,8 +112,8 @@ bool LSqlTableModel::select()
   clearData();
   //Заполнение индекса и карты записей
   while (_query.next()){
-    _recIndex.append(_query.value("ID").toInt());
-    _recMap.insert(_query.value("ID").toInt(), LSqlRecord(_query.record()));
+    _recIndex.append(_query.value("ID").toLongLong());
+    _recMap.insert(_query.value("ID").toLongLong(), LSqlRecord(_query.record()));
   }
   endResetModel();
 
@@ -122,7 +122,7 @@ bool LSqlTableModel::select()
 
 bool LSqlTableModel::submitRow(int row)
 {
-  long id = _recIndex.at(row);
+  qlonglong id = _recIndex.at(row);
   return submitRecord(_recMap[id]);
 }
 
@@ -150,7 +150,6 @@ bool LSqlTableModel::submitAll()
 */
 int LSqlTableModel::rowCount(const QModelIndex &parent) const
 {
-  std::ignore = parent;
   return _recMap.count();
 }
 
@@ -159,7 +158,6 @@ int LSqlTableModel::rowCount(const QModelIndex &parent) const
 */
 int LSqlTableModel::columnCount(const QModelIndex &parent) const
 {
-  std::ignore = parent;
   return _patternRec.count() + _lookupFields.count();
 }
 
@@ -178,7 +176,7 @@ QVariant LSqlTableModel::data(const QModelIndex &index, int role) const
       LSqlRecord rec = _recMap[_recIndex.at(index.row())];
       if (index.column() >= rec.count()){
         LLookupField lookupField = _lookupFields.at(index.column() - rec.count());
-        int key = rec.value(lookupField.keyField).toInt();
+        qlonglong key = rec.value(lookupField.keyField).toLongLong();
         return lookupField.date(key);
       }
       else {
@@ -278,7 +276,7 @@ bool LSqlTableModel::insertRows(int row, int count, const QModelIndex &parent)
     return false;
 
   //Trying to get next id value
-  int newId = nextSequenceNumber();
+  qlonglong newId = nextSequenceNumber();
   if (newId < 0)
     return false;
 
@@ -311,7 +309,7 @@ bool LSqlTableModel::removeRows(int row, int count, const QModelIndex &parent)
   //No need to delete record in DB if it isn't there yet
   if (_recMap.value(_recIndex[row]).cacheAction() != LSqlRecord::Insert){
     QSqlRecord delRec(_primaryIndex);
-    delRec.setValue("ID", (int)_recIndex.at(row));
+    delRec.setValue("ID", (qlonglong)_recIndex.at(row));
 
     if (!deleteRowInTable(delRec))
       return false;
@@ -342,7 +340,7 @@ int LSqlTableModel::rowByValue(QString field, QVariant value)
   return -1;
 }
 
-QSqlRecord* LSqlTableModel::recordById(int id)
+QSqlRecord* LSqlTableModel::recordById(qlonglong id)
 {  
   return _recMap.contains(id) ? &_recMap[id] : 0;
 }
@@ -512,11 +510,11 @@ QSqlRecord LSqlTableModel::primaryValues(QSqlRecord rec) const
   return r;
 }
 
-int LSqlTableModel::primaryKey(int row, int part)
+qlonglong LSqlTableModel::primaryKey(int row, int part)
 {
   if (part >= _primaryIndex.count())
     part = 0;
-  return data(row, primaryKeyName(part)).toInt();
+  return data(row, primaryKeyName(part)).toLongLong();
 }
 
 QString LSqlTableModel::primaryKeyName(int part)
@@ -542,7 +540,7 @@ QString LSqlTableModel::selectAllSql()
     Returns a subsequent value of the database generator (sequence).
     Name of the generator can be set by method \c setSequenceName.
 */
-int LSqlTableModel::nextSequenceNumber()
+qlonglong LSqlTableModel::nextSequenceNumber()
 {
   if (_sequenceName.isEmpty()){
     qDebug() << "No sequence specified for table " << _tableName;
@@ -555,7 +553,7 @@ int LSqlTableModel::nextSequenceNumber()
       return -1;
   }
   _query.next();
-  return _query.value(0).toInt();
+  return _query.value(0).toLongLong();
 }
 
 /*!
