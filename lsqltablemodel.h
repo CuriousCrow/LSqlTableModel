@@ -58,6 +58,7 @@ QT_END_NAMESPACE
 typedef QSqlHelper Sql;
 
 class LLookupField;
+class LCalcField;
 
 class LSqlRecord : public QSqlRecord
 {
@@ -73,6 +74,7 @@ private:
   CacheAction _cacheAction;
 };
 
+
 class LSqlTableModel : public QAbstractTableModel
 {
   Q_OBJECT
@@ -84,16 +86,18 @@ public:
   void setFilter(QString sqlFilter){ _sqlFilter = sqlFilter; }
   QString filter(){ return _sqlFilter; }
   void setSort(int colIndex, Qt::SortOrder sortOrder);
-  void setSort(QString colName, Qt::SortOrder sortOrder);  
+  void setSort(QString colName, Qt::SortOrder sortOrder);
 
   void setHeaders(QStringList strList);
 
-  void addLookupField(LSqlTableModel* lookupModel, QString keyField, QString lookupField);
+  void addCalcField(LCalcField* field);
 
   int fieldIndex(QString fieldName) const;
   bool isDirty(const QModelIndex & index) const;
   bool isDirty() const;
   void setCacheAction(qlonglong recId, LSqlRecord::CacheAction action);
+
+  void setUserDataColumn(int idx = 0);
 
   void setSequenceName(QString name);
   //Populate model with table data
@@ -104,6 +108,8 @@ public:
   bool submitAll();
   //Revert all cached changes
   bool revertAll();
+
+  void clear();
 
   int rowCount(const QModelIndex & parent = QModelIndex()) const;
   int columnCount(const QModelIndex & parent = QModelIndex()) const;
@@ -134,6 +140,7 @@ signals:
 private:
   QString _tableName;
   QString _sqlFilter;
+  int _userDataCol = 0;
   QString _orderByClause;
   QString _sequenceName;
   QStringList _headers;
@@ -141,7 +148,7 @@ private:
   typedef QHash<qlonglong, LSqlRecord> CacheMap;
   QSqlIndex _primaryIndex;
   QSqlRecord _patternRec;
-  QList<LLookupField> _lookupFields;
+  QList<LCalcField*> _calcFields;
 
   bool _modified = false;
 
@@ -175,13 +182,39 @@ protected:
   virtual bool deleteRowInTable(const QSqlRecord &values);
 };
 
-class LLookupField : public QSqlField
+class LLookupField
 {
 public:
   LSqlTableModel* lookupModel;
   QString lookupField;
   QString keyField;
-  QVariant date(int key);
+  QVariant data(int key);
 };
+
+class LCalcField
+{
+public:
+  LCalcField(QString name);
+  void setModel(LSqlTableModel* model);
+  QString name(){ return _name; }
+  virtual QVariant data(int row, int role = Qt::DisplayRole) = 0;
+protected:
+  QVariant modelData(int row, QString field, int role = Qt::DisplayRole);
+private:
+  QString _name;
+  LSqlTableModel* _model;
+};
+
+class LNewLookupField : public LCalcField
+{
+public:
+    LNewLookupField(QString name, LSqlTableModel* lookupModel, QString keyField, QString lookupField);
+    virtual QVariant data(int row, int role = Qt::DisplayRole);
+private:
+    LSqlTableModel* _lookupModel;
+    QString _lookupField;
+    QString _keyField;
+};
+
 
 #endif // LSQLTABLEMODEL_H

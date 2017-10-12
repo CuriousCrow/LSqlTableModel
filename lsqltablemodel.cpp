@@ -2,8 +2,6 @@
 #include <QDebug>
 #include <QSqlError>
 
-bool LSqlTableModel::_logging = true;
-
 /*!
     \class LSqlTableModel
     \brief The alternative to standard QSqlTable model class that provides an editable data model
@@ -29,8 +27,9 @@ LSqlTableModel::LSqlTableModel(QObject *parent, QSqlDatabase db) :
 bool LSqlTableModel::setTable(QString tableName)
 {
   _tableName = tableName;
-  _patternRec = _db.record(_tableName);
-  _primaryIndex = _db.primaryIndex(_tableName);
+  QString preparedName = _db.driver()->escapeIdentifier(_tableName, QSqlDriver::TableName);
+  _patternRec = _db.record(preparedName);
+  _primaryIndex = _db.primaryIndex(preparedName);
   return true;
 }
 
@@ -48,7 +47,7 @@ void LSqlTableModel::setSort(QString colName, Qt::SortOrder sortOrder)
 
 QString LSqlTableModel::tableName()
 {
-  return _tableName;
+  return _db.driver()->escapeIdentifier(_tableName, QSqlDriver::TableName);
 }
 
 void LSqlTableModel::setHeaders(QStringList strList)
@@ -58,25 +57,20 @@ void LSqlTableModel::setHeaders(QStringList strList)
   emit headerDataChanged(Qt::Horizontal, 0, _headers.count() - 1);
 }
 
-void LSqlTableModel::addLookupField(LSqlTableModel *lookupModel, QString keyField, QString lookupField)
+void LSqlTableModel::addCalcField(LCalcField *field)
 {
-  LLookupField field = LLookupField();
-  field.lookupModel = lookupModel;
-  field.keyField = keyField;
-  field.lookupField = lookupField;
-  _lookupFields.append(field);
-  //Changes in lookup model considered as changes of the model
-  //TODO: this situation should be handled more correctly
-  connect(lookupModel, SIGNAL(dataChanged(QModelIndex,QModelIndex)),
-          this, SIGNAL(dataChanged(QModelIndex,QModelIndex)));
+  field->setModel(this);
+  _calcFields.append(field);  
+  //Возможно здесь стоит испустить сигнал о новой колонке
+  //TODO: необходимо связать сигнал о изменении обычного поля с необходимостью обновить вычисляемое поле
 }
 
 int LSqlTableModel::fieldIndex(QString fieldName) const
 {
   int index = _patternRec.indexOf(fieldName);
   if (index < 0){
-    for(int i=0; i<_lookupFields.count(); i++){
-      if (_lookupFields.at(i).lookupField == fieldName)
+    for(int i=0; i<_calcFields.count(); i++){
+      if (_calcFields.at(i)->name() == fieldName)
         return _patternRec.count() + i;
     }
   }
@@ -101,6 +95,11 @@ bool LSqlTableModel::isDirty() const
 void LSqlTableModel::setCacheAction(qlonglong recId, LSqlRecord::CacheAction action)
 {
   setCacheAction(_recMap[recId], action);
+}
+
+void LSqlTableModel::setUserDataColumn(int idx)
+{
+    _userDataCol  = idx;
 }
 
 void LSqlTableModel::setSequenceName(QString name)
@@ -167,7 +166,8 @@ int LSqlTableModel::rowCount(const QModelIndex &parent) const
 */
 int LSqlTableModel::columnCount(const QModelIndex &parent) const
 {
-  return _patternRec.count() + _lookupFields.count();
+  Q_UNUSED(parent)
+  return _patternRec.count() + _calcFields.count();
 }
 
 /*!
@@ -178,19 +178,20 @@ QVariant LSqlTableModel::data(const QModelIndex &index, int role) const
 {
   if (!index.isValid())
     return QVariant();
+  if (role == Qt::UserRole) {
+    return data(this->index(index.row(), _userDataCol));
+  }
+  //Calculated field requested
+  if (index.column() >= _patternRec.count()) {
+    LCalcField* calcField = _calcFields.at(index.column() - _patternRec.count());
+    return calcField->data(index.row(), role);
+  }
   switch (role) {
     case Qt::DisplayRole:    
     case Qt::EditRole:
     {      
       LSqlRecord rec = _recMap[_recIndex.at(index.row())];
-      if (index.column() >= rec.count()){
-        LLookupField lookupField = _lookupFields.at(index.column() - rec.count());
-        qlonglong key = rec.value(lookupField.keyField).toLongLong();
-        return lookupField.date(key);
-      }
-      else {
-        return rec.value(index.column());
-      }
+      return rec.value(index.column());
     }
     default:
       return QVariant();
@@ -219,7 +220,7 @@ bool LSqlTableModel::setData(const QModelIndex &index, const QVariant &value, in
     LSqlRecord &rec = _recMap[_recIndex.at(index.row())];
     emit beforeUpdate(rec);
     rec.setValue(index.column(), value);
-    setCacheAction(rec, LSqlRecord::Update);    
+    setCacheAction(rec, LSqlRecord::Update);
     qDebug() << "Record" << index.row() << "updated:"
              << data(index) << "->" << value;
     emit dataChanged(index, index);
@@ -266,7 +267,7 @@ QVariant LSqlTableModel::headerData(int section, Qt::Orientation orientation, in
         if (_patternRec.count() > section)
           return _patternRec.fieldName(section);
         else
-          return _lookupFields.at(section -_patternRec.count()).lookupField;
+          return _calcFields.at(section -_patternRec.count())->name();
       }
     }
   }
@@ -442,6 +443,13 @@ bool LSqlTableModel::revertAll()
   return result;
 }
 
+void LSqlTableModel::clear()
+{
+    beginResetModel();
+    clearData();
+    endResetModel();
+}
+
 bool LSqlTableModel::reloadRow(int row)
 {
   LSqlRecord& rec = _recMap[_recIndex[row]];
@@ -494,9 +502,9 @@ bool LSqlTableModel::updateRowInTable(const QSqlRecord &values)
     QSqlRecord rec(values);    
     QSqlRecord whereValues = primaryValues(values);
 
-    QString stmt = _db.driver()->sqlStatement(QSqlDriver::UpdateStatement, _tableName,
+    QString stmt = _db.driver()->sqlStatement(QSqlDriver::UpdateStatement, tableName(),
                                                      rec, false);
-    QString where = _db.driver()->sqlStatement(QSqlDriver::WhereStatement, _tableName,
+    QString where = _db.driver()->sqlStatement(QSqlDriver::WhereStatement, tableName(),
                                                        whereValues, false);
     QString sql = Sql::concat(stmt, where);
     return execQuery(sql);
@@ -504,7 +512,7 @@ bool LSqlTableModel::updateRowInTable(const QSqlRecord &values)
 
 bool LSqlTableModel::insertRowInTable(const QSqlRecord &values)
 {
-  QString stmt = _db.driver()->sqlStatement(QSqlDriver::InsertStatement, _tableName,
+  QString stmt = _db.driver()->sqlStatement(QSqlDriver::InsertStatement, tableName(),
                                                    values, false);
   if (returningInsertMode())
     stmt.append(Sql::sp() + "RETURNING ID");
@@ -514,9 +522,9 @@ bool LSqlTableModel::insertRowInTable(const QSqlRecord &values)
 bool LSqlTableModel::deleteRowInTable(const QSqlRecord &values)
 {
   QSqlRecord rec(values);
-  QString stmt = _db.driver()->sqlStatement(QSqlDriver::DeleteStatement, _tableName,
+  QString stmt = _db.driver()->sqlStatement(QSqlDriver::DeleteStatement, tableName(),
                                             rec, false);
-  QString where = _db.driver()->sqlStatement(QSqlDriver::WhereStatement, _tableName,
+  QString where = _db.driver()->sqlStatement(QSqlDriver::WhereStatement, tableName(),
                                                      values, false);
   QString sql = Sql::concat(stmt, where);
   return execQuery(sql);
@@ -557,7 +565,7 @@ int LSqlTableModel::primaryKeyCount()
 
 QString LSqlTableModel::selectAllSql()
 {
-  QString stmt = _db.driver()->sqlStatement(QSqlDriver::SelectStatement, _tableName,
+  QString stmt = _db.driver()->sqlStatement(QSqlDriver::SelectStatement, tableName(),
                                                    _patternRec, false);
   QString where = _sqlFilter.isEmpty() ? "" : " where " + _sqlFilter;
   return Sql::concat(Sql::concat(stmt, where), _orderByClause);
@@ -630,7 +638,7 @@ LSqlRecord::LSqlRecord(const QSqlRecord &rec): QSqlRecord(rec)
   _cacheAction = LSqlRecord::None;
 }
 
-QVariant LLookupField::date(int key)
+QVariant LLookupField::data(int key)
 {
   QSqlRecord* rec = lookupModel->recordById(key);
   if (rec == 0){
@@ -639,4 +647,47 @@ QVariant LLookupField::date(int key)
   else {
     return rec->value(lookupField);
   }
+}
+
+
+
+LCalcField::LCalcField(QString name)
+{
+    _name = name;
+}
+
+void LCalcField::setModel(LSqlTableModel *model)
+{
+    _model = model;
+}
+
+QVariant LCalcField::modelData(int row, QString field, int role)
+{
+  if (field == _name) {
+      qWarning() << "Infinite recursion in field" << _name;
+      return QVariant();
+  }
+  return _model->data(row, field, role);
+}
+
+LNewLookupField::LNewLookupField(QString name, LSqlTableModel* lookupModel, QString keyField, QString lookupField) : LCalcField(name)
+{
+    _lookupModel = lookupModel;
+    _lookupField = lookupField;
+    _keyField = keyField;
+}
+
+QVariant LNewLookupField::data(int row, int role)
+{
+    if (role != Qt::DisplayRole)
+        return QVariant();
+
+    qlonglong key = modelData(row, _keyField).toLongLong();
+    QSqlRecord* rec = _lookupModel->recordById(key);
+    if (rec == 0){
+      return QVariant();
+    }
+    else {
+      return rec->value(_lookupField);
+    }
 }
