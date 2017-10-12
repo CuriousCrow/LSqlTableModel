@@ -84,7 +84,7 @@ public:
   void setFilter(QString sqlFilter){ _sqlFilter = sqlFilter; }
   QString filter(){ return _sqlFilter; }
   void setSort(int colIndex, Qt::SortOrder sortOrder);
-  void setSort(QString colName, Qt::SortOrder sortOrder);
+  void setSort(QString colName, Qt::SortOrder sortOrder);  
 
   void setHeaders(QStringList strList);
 
@@ -95,7 +95,7 @@ public:
   bool isDirty() const;
   void setCacheAction(qlonglong recId, LSqlRecord::CacheAction action);
 
-  void setSequenceName(QString name){ _sequenceName = name; }
+  void setSequenceName(QString name);
   //Populate model with table data
   virtual bool select();
   //Submit one record by row
@@ -126,6 +126,8 @@ public:
   QVariant execQuery(const QString &sql, QString resColumn);
   //Wrapper for all sql-queries (for debugging)
   bool execQuery(const QString &sql);
+
+  static void enableLogging(bool enable);
 signals:
   void beforeInsert(QSqlRecord &rec);
   void beforeUpdate(QSqlRecord &rec);
@@ -149,6 +151,11 @@ private:
   bool isNull(const QModelIndex &index);
   //Get next sequence value
   qlonglong nextSequenceNumber();
+  bool returningInsertMode();
+  int _insertedCount = 0;
+  bool _autoIncrementID;
+
+  static bool _logging;
 protected:
   CacheMap _recMap;
   QList<qlonglong> _recIndex;

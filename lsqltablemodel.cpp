@@ -2,6 +2,8 @@
 #include <QDebug>
 #include <QSqlError>
 
+bool LSqlTableModel::_logging = true;
+
 /*!
     \class LSqlTableModel
     \brief The alternative to standard QSqlTable model class that provides an editable data model
@@ -18,6 +20,7 @@ LSqlTableModel::LSqlTableModel(QObject *parent, QSqlDatabase db) :
 {
   _db = db.isValid() ? db : QSqlDatabase::database();
   _query = QSqlQuery(_db);
+  _autoIncrementID = db.driver()->hasFeature(QSqlDriver::LastInsertId);
 }
 
 /*!
@@ -98,6 +101,12 @@ bool LSqlTableModel::isDirty() const
 void LSqlTableModel::setCacheAction(qlonglong recId, LSqlRecord::CacheAction action)
 {
   setCacheAction(_recMap[recId], action);
+}
+
+void LSqlTableModel::setSequenceName(QString name)
+{
+  _sequenceName = name;
+  _autoIncrementID = _sequenceName.isEmpty();
 }
 
 /*!
@@ -275,13 +284,21 @@ bool LSqlTableModel::insertRows(int row, int count, const QModelIndex &parent)
   if (parent.isValid() || count > 1)
     return false;
 
-  //Trying to get next id value
-  qlonglong newId = nextSequenceNumber();
-  if (newId < 0)
-    return false;
-
   LSqlRecord newRec(_patternRec);
   newRec.clearValues();
+
+  //Trying to get next id value    
+  qlonglong newId;
+  //Autoincrement ID field
+  if (_autoIncrementID || returningInsertMode()) {
+    //Set temprary (negative) ID value
+    newId = -(++_insertedCount);
+  }
+  else { //Sequence-based autoincrement
+    newId = nextSequenceNumber();
+    if (newId < 0)
+      return false;
+  }
   newRec.setValue("ID", QVariant(newId));
 
   //Signal to initialize the row with default values
@@ -373,7 +390,15 @@ bool LSqlTableModel::submitRecord(LSqlRecord &rec)
     result = updateRowInTable(rec);
   }
   else if (rec.cacheAction() == LSqlRecord::Insert) {
+    //Clear temporary ID for DB autoincrement
+    if (rec.value("ID").toLongLong() < 0)
+      rec.setValue("ID", QVariant());
     result = insertRowInTable(rec);
+    //Update ID with generated value
+    if (result && _autoIncrementID)
+      rec.setValue("ID", _query.lastInsertId());
+    if (result && returningInsertMode() && _query.next())
+      rec.setValue("ID", _query.value(0));
   }
   if (result){
     setCacheAction(rec, LSqlRecord::None);
@@ -481,6 +506,8 @@ bool LSqlTableModel::insertRowInTable(const QSqlRecord &values)
 {
   QString stmt = _db.driver()->sqlStatement(QSqlDriver::InsertStatement, _tableName,
                                                    values, false);
+  if (returningInsertMode())
+    stmt.append(Sql::sp() + "RETURNING ID");
   return execQuery(stmt);
 }
 
@@ -556,6 +583,11 @@ qlonglong LSqlTableModel::nextSequenceNumber()
   return _query.value(0).toLongLong();
 }
 
+bool LSqlTableModel::returningInsertMode()
+{
+  return _db.driverName() == "QIBASE" && _sequenceName.isEmpty();
+}
+
 /*!
     A wrapper function for all sql-queries.
     Sends all executed sql-queries to qDebug() in case
@@ -564,11 +596,17 @@ qlonglong LSqlTableModel::nextSequenceNumber()
 bool LSqlTableModel::execQuery(const QString &sql)
 {
   bool result = _query.exec(sql);
-  qDebug() << "Execute query: " << sql;
-  if (!result){
+  if (_logging)
+    qDebug() << "Execute query: " << sql;
+  if (!result && _logging){
     qDebug() << "Error: " << _query.lastError().databaseText();
   }
   return result;
+}
+
+void LSqlTableModel::enableLogging(bool enable)
+{
+  _logging = enable;
 }
 
 QVariant LSqlTableModel::execQuery(const QString &sql, QString resColumn)
@@ -591,7 +629,6 @@ LSqlRecord::LSqlRecord(const QSqlRecord &rec): QSqlRecord(rec)
 {
   _cacheAction = LSqlRecord::None;
 }
-
 
 QVariant LLookupField::date(int key)
 {
