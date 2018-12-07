@@ -182,15 +182,6 @@ protected:
   virtual bool deleteRowInTable(const QSqlRecord &values);
 };
 
-class LLookupField
-{
-public:
-  LSqlTableModel* lookupModel;
-  QString lookupField;
-  QString keyField;
-  QVariant data(int key);
-};
-
 class LCalcField
 {
 public:
@@ -205,10 +196,10 @@ private:
   LSqlTableModel* _model;
 };
 
-class LNewLookupField : public LCalcField
+class LLookupField : public LCalcField
 {
 public:
-    LNewLookupField(QString name, LSqlTableModel* lookupModel, QString keyField, QString lookupField);
+    LLookupField(QString name, LSqlTableModel* lookupModel, QString keyField, QString lookupField);
     virtual QVariant data(int row, int role = Qt::DisplayRole);
 private:
     LSqlTableModel* _lookupModel;

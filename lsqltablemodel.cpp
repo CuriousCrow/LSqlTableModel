@@ -2,6 +2,8 @@
 #include <QDebug>
 #include <QSqlError>
 
+bool LSqlTableModel::_logging = true;
+
 /*!
     \class LSqlTableModel
     \brief The alternative to standard QSqlTable model class that provides an editable data model
@@ -638,19 +640,6 @@ LSqlRecord::LSqlRecord(const QSqlRecord &rec): QSqlRecord(rec)
   _cacheAction = LSqlRecord::None;
 }
 
-QVariant LLookupField::data(int key)
-{
-  QSqlRecord* rec = lookupModel->recordById(key);
-  if (rec == 0){
-    return QVariant();
-  }
-  else {
-    return rec->value(lookupField);
-  }
-}
-
-
-
 LCalcField::LCalcField(QString name)
 {
     _name = name;
@@ -670,14 +659,14 @@ QVariant LCalcField::modelData(int row, QString field, int role)
   return _model->data(row, field, role);
 }
 
-LNewLookupField::LNewLookupField(QString name, LSqlTableModel* lookupModel, QString keyField, QString lookupField) : LCalcField(name)
+LLookupField::LLookupField(QString name, LSqlTableModel* lookupModel, QString keyField, QString lookupField) : LCalcField(name)
 {
     _lookupModel = lookupModel;
     _lookupField = lookupField;
     _keyField = keyField;
 }
 
-QVariant LNewLookupField::data(int row, int role)
+QVariant LLookupField::data(int row, int role)
 {
     if (role != Qt::DisplayRole)
         return QVariant();

@@ -44,9 +44,9 @@ bool LSqlLinkedRecordsModel::insertRows(int row, int count, const QModelIndex &p
 {
   if (row < 0 || row > rowCount())
     return false;
-  int prevRecID;
+  qlonglong prevRecID;
   if (row == 0){
-    prevRecID = data(row, _linkField).toInt();
+    prevRecID = data(row, _linkField).toLongLong();
   }
   else {
     prevRecID = primaryKey(row - 1);
@@ -58,7 +58,7 @@ bool LSqlLinkedRecordsModel::insertRows(int row, int count, const QModelIndex &p
     removeRow(row);
 
   if (result && (rowCount() > row + 1)){
-    int insertedID = primaryKey(row);
+    qlonglong insertedID = primaryKey(row);
     setData(row + 1, _linkField, insertedID);
     result = result && submitRow(row + 1);
   }
@@ -72,7 +72,7 @@ bool LSqlLinkedRecordsModel::removeRows(int row, int count, const QModelIndex &p
     return false;
 
   //Get ID of previous record from linkField
-  int prevId = data(row, _linkField).toInt();
+  qlonglong prevId = data(row, _linkField).toLongLong();
   if (!LSqlTableModel::removeRows(row, count, parent)){
     return false;
   }
