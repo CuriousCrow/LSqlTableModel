@@ -2,6 +2,8 @@
 #include <QDebug>
 #include <QSqlError>
 
+#define F_ID "ID"
+
 bool LSqlTableModel::_logging = true;
 
 /*!
@@ -101,7 +103,12 @@ void LSqlTableModel::setCacheAction(qlonglong recId, LSqlRecord::CacheAction act
 
 void LSqlTableModel::setUserDataColumn(int idx)
 {
-    _userDataCol  = idx;
+  _userDataCol  = idx;
+}
+
+void LSqlTableModel::setIdUserDataColumn()
+{
+  _userDataCol = fieldIndex(F_ID);
 }
 
 void LSqlTableModel::setSequenceName(QString name)
@@ -122,8 +129,8 @@ bool LSqlTableModel::select()
   clearData();
   //Fills index and data map with query result data
   while (_query.next()){
-    _recIndex.append(_query.value("ID").toLongLong());
-    _recMap.insert(_query.value("ID").toLongLong(), LSqlRecord(_query.record()));
+    _recIndex.append(_query.value(F_ID).toLongLong());
+    _recMap.insert(_query.value(F_ID).toLongLong(), LSqlRecord(_query.record()));
   }
   endResetModel();
 
@@ -145,6 +152,8 @@ bool LSqlTableModel::submitAll()
   //Nothing to submit
   if (!_modified)
     return true;
+
+  _sqlErrors.clear();
 
   CacheMap::Iterator it;
   bool result = true;
@@ -220,8 +229,15 @@ bool LSqlTableModel::setData(const QModelIndex &index, const QVariant &value, in
   if (role == Qt::EditRole &&
       ((isNull(index) && !value.isNull()) || data(index) != value)){
     LSqlRecord &rec = _recMap[_recIndex.at(index.row())];
+    QVariant::Type fieldType = rec.field(index.column()).type();
+    //Если значение не переводится в тип поля, то не вставляем
+    if (!canConvert(value, fieldType)) {
+      qWarning() << "Value" << value << "has invalid type";
+      return false;
+    }
     emit beforeUpdate(rec);
-    rec.setValue(index.column(), value);
+
+    rec.setValue(index.column(), convert(value, fieldType));
     setCacheAction(rec, LSqlRecord::Update);
     qDebug() << "Record" << index.row() << "updated:"
              << data(index) << "->" << value;
@@ -302,7 +318,7 @@ bool LSqlTableModel::insertRows(int row, int count, const QModelIndex &parent)
     if (newId < 0)
       return false;
   }
-  newRec.setValue("ID", QVariant(newId));
+  newRec.setValue(F_ID, QVariant(newId));
 
   //Signal to initialize the row with default values
   emit beforeInsert(newRec);
@@ -329,7 +345,7 @@ bool LSqlTableModel::removeRows(int row, int count, const QModelIndex &parent)
   //No need to delete record in DB if it isn't there yet
   if (_recMap.value(_recIndex[row]).cacheAction() != LSqlRecord::Insert){
     QSqlRecord delRec(_primaryIndex);
-    delRec.setValue("ID", (qlonglong)_recIndex.at(row));
+    delRec.setValue(F_ID, (qlonglong)_recIndex.at(row));
 
     if (!deleteRowInTable(delRec))
       return false;
@@ -360,9 +376,21 @@ int LSqlTableModel::rowByValue(QString field, QVariant value)
   return -1;
 }
 
+qlonglong LSqlTableModel::idByRow(int row)
+{
+  if (row < 0 || row >= _recIndex.size())
+    return -1;
+  return _recIndex.value(row);
+}
+
 QSqlRecord* LSqlTableModel::recordById(qlonglong id)
 {  
   return _recMap.contains(id) ? &_recMap[id] : 0;
+}
+
+QStringList LSqlTableModel::sqlErrors()
+{
+  return _sqlErrors;
 }
 
 /*!
@@ -394,14 +422,14 @@ bool LSqlTableModel::submitRecord(LSqlRecord &rec)
   }
   else if (rec.cacheAction() == LSqlRecord::Insert) {
     //Clear temporary ID for DB autoincrement
-    if (rec.value("ID").toLongLong() < 0)
-      rec.setValue("ID", QVariant());
+    if (rec.value(F_ID).toLongLong() < 0)
+      rec.setValue(F_ID, QVariant());
     result = insertRowInTable(rec);
     //Update ID with generated value
     if (result && _autoIncrementID)
-      rec.setValue("ID", _query.lastInsertId());
+      rec.setValue(F_ID, _query.lastInsertId());
     if (result && returningInsertMode() && _query.next())
-      rec.setValue("ID", _query.value(0));
+      rec.setValue(F_ID, _query.value(0));
   }
   if (result){
     setCacheAction(rec, LSqlRecord::None);
@@ -565,6 +593,35 @@ int LSqlTableModel::primaryKeyCount()
   return _primaryIndex.count();
 }
 
+bool LSqlTableModel::canConvert(const QVariant value, QVariant::Type type)
+{
+  if (value.type() == type)
+    return true;
+
+  if ((type == QVariant::Int || type == QVariant::LongLong) && value.type() == QVariant::String) {
+    if (value.toString().isEmpty())
+      return true;
+    bool success = false;
+    value.toString().toInt(&success);
+    return success;
+  }
+
+  if (!value.canConvert(type))
+    return false;
+
+  return true;
+}
+
+QVariant LSqlTableModel::convert(const QVariant value, QVariant::Type type)
+{
+  if ((type == QVariant::Int || type == QVariant::LongLong) && value.type() == QVariant::String) {
+    if (value.toString().isEmpty())
+      return QVariant();
+    return value.toString().toInt();
+  }
+  return value;
+}
+
 QString LSqlTableModel::selectAllSql()
 {
   QString stmt = _db.driver()->sqlStatement(QSqlDriver::SelectStatement, tableName(),
@@ -609,7 +666,9 @@ bool LSqlTableModel::execQuery(const QString &sql)
   if (_logging)
     qDebug() << "Execute query: " << sql;
   if (!result && _logging){
-    qDebug() << "Error: " << _query.lastError().databaseText();
+    QString errorMessage = _query.lastError().databaseText();
+    _sqlErrors.append(sql + ": " + errorMessage);
+    qDebug() << "Error: " << errorMessage;
   }
   return result;
 }
@@ -642,7 +701,11 @@ LSqlRecord::LSqlRecord(const QSqlRecord &rec): QSqlRecord(rec)
 
 LCalcField::LCalcField(QString name)
 {
-    _name = name;
+  _name = name;
+}
+
+LCalcField::~LCalcField()
+{
 }
 
 void LCalcField::setModel(LSqlTableModel *model)

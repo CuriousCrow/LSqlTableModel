@@ -98,6 +98,7 @@ public:
   void setCacheAction(qlonglong recId, LSqlRecord::CacheAction action);
 
   void setUserDataColumn(int idx = 0);
+  void setIdUserDataColumn();
 
   void setSequenceName(QString name);
   //Populate model with table data
@@ -125,8 +126,10 @@ public:
 
   QSqlRecord record(int row) const;
   int rowByValue(QString field, QVariant value);
+  qlonglong idByRow(int row);
   QSqlRecord* recordById(qlonglong id);
   QSqlRecord patternRecord() { return _patternRec; }
+  QStringList sqlErrors();
 
   //TODO: Should be static method
   QVariant execQuery(const QString &sql, QString resColumn);
@@ -172,8 +175,12 @@ protected:
   qlonglong primaryKey(int row, int part = 0);
   QString primaryKeyName(int part = 0);
   int primaryKeyCount();
+  bool canConvert(const QVariant value, QVariant::Type type);
+  QVariant convert(const QVariant value, QVariant::Type type);
+
   QSqlDatabase _db;
   QSqlQuery _query;
+  QStringList _sqlErrors;
 
   virtual QString selectAllSql();
   virtual bool selectRowInTable(QSqlRecord &values);
@@ -186,6 +193,7 @@ class LCalcField
 {
 public:
   LCalcField(QString name);
+  virtual ~LCalcField();
   void setModel(LSqlTableModel* model);
   QString name(){ return _name; }
   virtual QVariant data(int row, int role = Qt::DisplayRole) = 0;
